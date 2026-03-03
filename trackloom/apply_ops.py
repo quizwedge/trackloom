@@ -1,0 +1,126 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Dan Getz, Jr.
+from __future__ import annotations
+
+import shutil
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+
+def _unique_path(base_path: Path) -> Path:
+    if not base_path.exists():
+        return base_path
+    stem = base_path.stem
+    suffix = base_path.suffix
+    parent = base_path.parent
+    counter = 2
+    candidate = parent / f"{stem} ({counter}){suffix}"
+    while candidate.exists():
+        counter += 1
+        candidate = parent / f"{stem} ({counter}){suffix}"
+    return candidate
+
+
+def _quarantine_destination(
+    target_path: Path, dir_b: Path, quarantine_dir: Path
+) -> Path:
+    try:
+        relative = target_path.relative_to(dir_b)
+    except ValueError:
+        relative = Path(target_path.name)
+    return _unique_path(quarantine_dir / relative)
+
+
+def execute_operations(
+    operations: List[Dict[str, Any]],
+    dry_run: bool = False,
+    cleanup_mode: str = "none",
+    quarantine_dir: Optional[Path] = None,
+    dir_b: Optional[Path] = None,
+) -> Dict[str, Any]:
+    if cleanup_mode not in {"none", "move-to-quarantine"}:
+        raise ValueError("cleanup_mode must be 'none' or 'move-to-quarantine'")
+    if cleanup_mode == "move-to-quarantine":
+        if quarantine_dir is None:
+            raise ValueError("quarantine_dir is required for move-to-quarantine mode")
+        if dir_b is None:
+            raise ValueError("dir_b is required for move-to-quarantine mode")
+
+    executed: List[Dict[str, Any]] = []
+    skipped: List[Dict[str, Any]] = []
+
+    for operation in operations:
+        src = Path(operation["source_path"])
+        dst = Path(operation["destination_path"])
+        preferred_dst_raw = operation.get("preferred_destination_path")
+        preferred_dst = Path(preferred_dst_raw) if preferred_dst_raw else dst
+        replace_target_raw = operation.get("replace_target_path")
+        replace_target = Path(replace_target_raw) if replace_target_raw else None
+
+        if not src.exists():
+            skipped.append(
+                {
+                    "operation": operation,
+                    "reason": "source_missing",
+                }
+            )
+            continue
+
+        quarantine_move = None
+        effective_dst = dst
+        if (
+            cleanup_mode == "move-to-quarantine"
+            and operation.get("action") == "replace_in_b_with_a"
+            and replace_target is not None
+            and replace_target.exists()
+        ):
+            qdst = _quarantine_destination(replace_target, dir_b, quarantine_dir)
+            if dry_run:
+                quarantine_move = {"from": str(replace_target), "to": str(qdst), "status": "dry_run"}
+            else:
+                qdst.parent.mkdir(parents=True, exist_ok=True)
+                replace_target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(replace_target), str(qdst))
+                quarantine_move = {"from": str(replace_target), "to": str(qdst), "status": "moved"}
+            effective_dst = preferred_dst
+
+        if effective_dst.exists():
+            skipped.append(
+                {
+                    "operation": operation,
+                    "effective_destination_path": str(effective_dst),
+                    "quarantine_move": quarantine_move,
+                    "reason": "destination_exists",
+                }
+            )
+            continue
+
+        if dry_run:
+            executed.append(
+                {
+                    "operation": operation,
+                    "effective_destination_path": str(effective_dst),
+                    "quarantine_move": quarantine_move,
+                    "status": "dry_run",
+                }
+            )
+            continue
+
+        effective_dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, effective_dst)
+        executed.append(
+            {
+                "operation": operation,
+                "effective_destination_path": str(effective_dst),
+                "quarantine_move": quarantine_move,
+                "status": "copied",
+            }
+        )
+
+    return {
+        "requested_count": len(operations),
+        "executed_count": len(executed),
+        "skipped_count": len(skipped),
+        "executed": executed,
+        "skipped": skipped,
+    }

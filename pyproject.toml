@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trackloom"
+version = "0.1.0"
+description = "CLI to compare audio files across two directories"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "GPL-3.0-or-later" }
+classifiers = [
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+]
+dependencies = [
+  "mutagen>=1.47.0",
+]
+
+[project.scripts]
+trackloom = "trackloom.cli:main"
+
+[tool.setuptools]
+packages = ["trackloom"]
+license-files = ["LICENSE"]
