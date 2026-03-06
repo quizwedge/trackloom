@@ -292,6 +292,11 @@ Apply CSV (`--report-csv`) columns:
   - inspect `mode_skipped_operations` in JSON output/report for reasons
   - ensure source extensions/codecs are Plex-compatible (DRM-protected files are excluded)
 
+## Community
+
+- Contribution guide: `CONTRIBUTING.md`
+- Code of Conduct: `CODE_OF_CONDUCT.md`
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0 or later

@@ -1,0 +1,60 @@
+name: Bug report
+description: Report a reproducible problem in Trackloom.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect?
+      placeholder: A short description of the bug and expected behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands/inputs so we can reproduce quickly.
+      placeholder: |
+        1. Run ...
+        2. Use flags ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Trackloom version
+      placeholder: e.g. 0.1.0
+    validations:
+      required: false
+
+  - type: input
+    id: python_version
+    attributes:
+      label: Python version
+      placeholder: e.g. 3.11.9
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS and filesystem context.
+      placeholder: e.g. macOS 14.6, APFS, external drive
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      description: Paste relevant CLI output or traceback.
+      render: shell
+    validations:
+      required: false
+
