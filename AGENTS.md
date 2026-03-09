@@ -92,8 +92,16 @@ Reports should preserve contract stability (see ADR 0015).
 Run full test suite:
 
 ```bash
-python3 -m unittest discover -s tests -p 'test_*.py' -v
+python3 -m pytest -q
 ```
+
+## Developer Tools
+
+- Demo fixture generator:
+  - `python3 scripts/make_demo_data.py --force`
+  - full tagged `mp3/m4a/flac` fixtures require `ffmpeg`
+- Synthetic tuning helper:
+  - `python3 scripts/tune_synthetic_thresholds.py`
 
 ## Key Files
 
@@ -133,7 +141,7 @@ Don't:
 Before a real apply run on production libraries:
 
 1. Run tests:
-   - `python3 -m unittest discover -s tests -p 'test_*.py' -v`
+   - `python3 -m pytest -q`
 2. Generate/update plan:
    - `plan --write-plan-json ...`
 3. Complete manual review (if needed):

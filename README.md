@@ -314,6 +314,7 @@ Apply CSV (`--report-csv`) columns:
 
 - Contribution guide: `CONTRIBUTING.md`
 - Code of Conduct: `CODE_OF_CONDUCT.md`
+- Release checklist: `RELEASE.md`
 
 ## License
 
