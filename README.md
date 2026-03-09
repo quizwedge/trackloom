@@ -111,6 +111,12 @@ Optional flags:
 `review` uses the same fuzzy/duration tuning flags as `compare`.
 `plan`/`apply`/`review` support `--mode {standard,plex}` (default `standard`).
 
+Synthetic tuning helper:
+
+```bash
+python3 scripts/tune_synthetic_thresholds.py
+```
+
 ## Output shape
 
 For each audio file in both directories, step 1 extracts:
