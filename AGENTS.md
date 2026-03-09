@@ -32,6 +32,7 @@ Recommended sequence:
 - Optional cleanup is quarantine-only and only for `replace_in_b_with_a`.
 - `apply` requires confirmation by default.
 - `apply --yes` real writes require safeguard confirmation unless `--force`.
+- `apply` is best-effort per operation: I/O failures are reported as skipped `io_error` entries and the run continues.
 
 If changing safety behavior, add/update ADR(s) first.
 

@@ -435,6 +435,129 @@ def _normalize_extensions(extensions: list[str]) -> set[str]:
     return {ext if ext.startswith(".") else f".{ext}" for ext in extensions}
 
 
+def _validate_compare_tuning_args(args: argparse.Namespace) -> None:
+    if args.fuzzy_threshold < 0 or args.fuzzy_threshold > 1:
+        raise ValueError("--fuzzy-threshold must be between 0.0 and 1.0")
+    if args.close_duration_seconds < 0:
+        raise ValueError("--close-duration-seconds must be >= 0")
+    if args.duration_conflict_seconds < 0:
+        raise ValueError("--duration-conflict-seconds must be >= 0")
+    if args.duration_conflict_seconds < args.close_duration_seconds:
+        raise ValueError("--duration-conflict-seconds must be >= --close-duration-seconds")
+    if args.min_song_sim < 0 or args.min_song_sim > 1:
+        raise ValueError("--min-song-sim must be between 0.0 and 1.0")
+    if args.min_artist_sim < 0 or args.min_artist_sim > 1:
+        raise ValueError("--min-artist-sim must be between 0.0 and 1.0")
+    if args.top_k < 0:
+        raise ValueError("--top-k must be >= 0")
+
+
+def _make_progress_callback(label: str):
+    def _callback(current: int, total: int, _: Path) -> None:
+        print(
+            f"\r[{label}] scanned {current}/{total} files",
+            end="",
+            file=sys.stderr,
+            flush=True,
+        )
+        if current == total:
+            print(file=sys.stderr, flush=True)
+
+    return _callback
+
+
+def _collect_audio_pair(
+    dir_a: Path, dir_b: Path, extensions: set[str], progress: bool
+):
+    files_a = collect_audio_metadata(
+        dir_a,
+        extensions=extensions,
+        progress_callback=(_make_progress_callback("A") if progress else None),
+    )
+    files_b = collect_audio_metadata(
+        dir_b,
+        extensions=extensions,
+        progress_callback=(_make_progress_callback("B") if progress else None),
+    )
+    return files_a, files_b
+
+
+def _compare_payload_from_args(
+    args: argparse.Namespace, files_a, files_b
+) -> dict:
+    return compare_collections(
+        files_a=files_a,
+        files_b=files_b,
+        fuzzy_threshold=args.fuzzy_threshold,
+        close_duration_seconds=args.close_duration_seconds,
+        duration_conflict_seconds=args.duration_conflict_seconds,
+        min_song_similarity=args.min_song_sim,
+        min_artist_similarity=args.min_artist_sim,
+        top_k=args.top_k,
+    )
+
+
+def _apply_mode_to_plan_payload(
+    plan_payload: dict,
+    mode: str,
+    dir_a: Path,
+    dir_b: Path,
+    compare_payload: Optional[dict] = None,
+) -> dict:
+    filtered_ops, mode_skipped = filter_operations_for_mode(plan_payload["operations"], mode)
+    plan_payload["operations"] = filtered_ops
+    plan_payload["mode"] = mode
+    plan_payload["mode_skipped_count"] = len(mode_skipped)
+    plan_payload["mode_skipped_operations"] = mode_skipped
+    plan_payload["counts"]["operations"] = len(filtered_ops)
+    plan_payload["counts"]["add_to_b"] = len(
+        [op for op in filtered_ops if op.get("action") == "add_to_b"]
+    )
+    plan_payload["counts"]["replace_in_b_with_a"] = len(
+        [op for op in filtered_ops if op.get("action") == "replace_in_b_with_a"]
+    )
+    plan_payload["counts"]["keep_both_versions"] = len(
+        [op for op in filtered_ops if op.get("action") == "keep_both_versions"]
+    )
+    plan_payload["dir_a"] = str(dir_a)
+    plan_payload["dir_b"] = str(dir_b)
+    if compare_payload is not None:
+        plan_payload["compare_summary"] = {
+            "exact_match_count": compare_payload["exact_match_count"],
+            "only_in_a_count": compare_payload["only_in_a_count"],
+            "only_in_b_count": compare_payload["only_in_b_count"],
+            "fuzzy_candidate_count": compare_payload["fuzzy_candidate_count"],
+            "fuzzy_rejection_count": compare_payload.get("fuzzy_rejection_count", 0),
+            "action_counts": compare_payload["action_counts"],
+        }
+    return plan_payload
+
+
+def _print_parsed_items(label: str, root: Path, items: list) -> None:
+    print(f"{label} ({root}) files: {len(items)}")
+    for item in items:
+        print(f"- {item.relative_path}")
+        print(
+            f"  path: artist={item.path_fields.artist!r}, "
+            f"album={item.path_fields.album!r}, song={item.path_fields.song!r}"
+        )
+        print(
+            f"  tags: artist={item.tag_fields.artist!r}, "
+            f"album={item.tag_fields.album!r}, song={item.tag_fields.song!r}"
+        )
+        print(
+            f"  norm: artist={item.normalized_path_fields.artist!r}, "
+            f"album={item.normalized_path_fields.album!r}, "
+            f"song={item.normalized_path_fields.song!r}"
+        )
+        print(
+            f"  quality: duration={item.duration_seconds!r}s, "
+            f"bitrate_kbps={item.bitrate_kbps!r}, sample_rate_hz={item.sample_rate_hz!r}, "
+            f"bit_depth={item.bit_depth!r}, channels={item.channels!r}, codec={item.codec!r}"
+        )
+        print(f"  version_hints: {item.version_hints!r}")
+
+
 def _print_next_apply_hints(dir_a: Path, dir_b: Path, plan_path: Path) -> None:
     print("Next commands:")
     print(
@@ -473,20 +596,7 @@ def _print_apply_change_summary(operations: list[dict], dir_b: str) -> None:
 
 def cmd_parse(args: argparse.Namespace) -> int:
     extensions = _normalize_extensions(args.extensions)
-    def make_progress_callback(label: str):
-        def _callback(current: int, total: int, _: Path) -> None:
-            print(
-                f"\r[{label}] scanned {current}/{total} files",
-                end="",
-                file=sys.stderr,
-                flush=True,
-            )
-            if current == total:
-                print(file=sys.stderr, flush=True)
-
-        return _callback
-
-    left_progress = make_progress_callback("A") if args.progress else None
+    left_progress = _make_progress_callback("A") if args.progress else None
     left = collect_audio_metadata(
         args.dir_a,
         extensions=extensions,
@@ -496,7 +606,7 @@ def cmd_parse(args: argparse.Namespace) -> int:
         collect_audio_metadata(
             args.dir_b,
             extensions=extensions,
-            progress_callback=(make_progress_callback("B") if args.progress else None),
+            progress_callback=(_make_progress_callback("B") if args.progress else None),
         )
         if args.dir_b is not None
         else []
@@ -515,106 +625,19 @@ def cmd_parse(args: argparse.Namespace) -> int:
         print(json.dumps(payload, indent=2))
         return 0
 
-    print(f"A ({args.dir_a}) files: {len(left)}")
-    for item in left:
-        print(f"- {item.relative_path}")
-        print(
-            f"  path: artist={item.path_fields.artist!r}, "
-            f"album={item.path_fields.album!r}, song={item.path_fields.song!r}"
-        )
-        print(
-            f"  tags: artist={item.tag_fields.artist!r}, "
-            f"album={item.tag_fields.album!r}, song={item.tag_fields.song!r}"
-        )
-        print(
-            f"  norm: artist={item.normalized_path_fields.artist!r}, "
-            f"album={item.normalized_path_fields.album!r}, "
-            f"song={item.normalized_path_fields.song!r}"
-        )
-        print(
-            f"  quality: duration={item.duration_seconds!r}s, "
-            f"bitrate_kbps={item.bitrate_kbps!r}, sample_rate_hz={item.sample_rate_hz!r}, "
-            f"bit_depth={item.bit_depth!r}, channels={item.channels!r}, codec={item.codec!r}"
-        )
-        print(f"  version_hints: {item.version_hints!r}")
+    _print_parsed_items("A", args.dir_a, left)
 
     if args.dir_b is not None:
-        print(f"B ({args.dir_b}) files: {len(right)}")
-        for item in right:
-            print(f"- {item.relative_path}")
-            print(
-                f"  path: artist={item.path_fields.artist!r}, "
-                f"album={item.path_fields.album!r}, song={item.path_fields.song!r}"
-            )
-            print(
-                f"  tags: artist={item.tag_fields.artist!r}, "
-                f"album={item.tag_fields.album!r}, song={item.tag_fields.song!r}"
-            )
-            print(
-                f"  norm: artist={item.normalized_path_fields.artist!r}, "
-                f"album={item.normalized_path_fields.album!r}, "
-                f"song={item.normalized_path_fields.song!r}"
-            )
-            print(
-                f"  quality: duration={item.duration_seconds!r}s, "
-                f"bitrate_kbps={item.bitrate_kbps!r}, sample_rate_hz={item.sample_rate_hz!r}, "
-                f"bit_depth={item.bit_depth!r}, channels={item.channels!r}, codec={item.codec!r}"
-            )
-            print(f"  version_hints: {item.version_hints!r}")
+        _print_parsed_items("B", args.dir_b, right)
     return 0
 
 
 def cmd_compare(args: argparse.Namespace) -> int:
-    if args.fuzzy_threshold < 0 or args.fuzzy_threshold > 1:
-        raise ValueError("--fuzzy-threshold must be between 0.0 and 1.0")
-    if args.close_duration_seconds < 0:
-        raise ValueError("--close-duration-seconds must be >= 0")
-    if args.duration_conflict_seconds < 0:
-        raise ValueError("--duration-conflict-seconds must be >= 0")
-    if args.duration_conflict_seconds < args.close_duration_seconds:
-        raise ValueError("--duration-conflict-seconds must be >= --close-duration-seconds")
-    if args.min_song_sim < 0 or args.min_song_sim > 1:
-        raise ValueError("--min-song-sim must be between 0.0 and 1.0")
-    if args.min_artist_sim < 0 or args.min_artist_sim > 1:
-        raise ValueError("--min-artist-sim must be between 0.0 and 1.0")
-    if args.top_k < 0:
-        raise ValueError("--top-k must be >= 0")
+    _validate_compare_tuning_args(args)
 
     extensions = _normalize_extensions(args.extensions)
-
-    def make_progress_callback(label: str):
-        def _callback(current: int, total: int, _: Path) -> None:
-            print(
-                f"\r[{label}] scanned {current}/{total} files",
-                end="",
-                file=sys.stderr,
-                flush=True,
-            )
-            if current == total:
-                print(file=sys.stderr, flush=True)
-
-        return _callback
-
-    files_a = collect_audio_metadata(
-        args.dir_a,
-        extensions=extensions,
-        progress_callback=(make_progress_callback("A") if args.progress else None),
-    )
-    files_b = collect_audio_metadata(
-        args.dir_b,
-        extensions=extensions,
-        progress_callback=(make_progress_callback("B") if args.progress else None),
-    )
-    payload = compare_collections(
-        files_a=files_a,
-        files_b=files_b,
-        fuzzy_threshold=args.fuzzy_threshold,
-        close_duration_seconds=args.close_duration_seconds,
-        duration_conflict_seconds=args.duration_conflict_seconds,
-        min_song_similarity=args.min_song_sim,
-        min_artist_similarity=args.min_artist_sim,
-        top_k=args.top_k,
-    )
+    files_a, files_b = _collect_audio_pair(args.dir_a, args.dir_b, extensions, args.progress)
+    payload = _compare_payload_from_args(args, files_a, files_b)
     payload["dir_a"] = str(args.dir_a)
     payload["dir_b"] = str(args.dir_b)
 
@@ -659,80 +682,15 @@ def cmd_compare(args: argparse.Namespace) -> int:
 
 
 def cmd_plan(args: argparse.Namespace) -> int:
-    if args.fuzzy_threshold < 0 or args.fuzzy_threshold > 1:
-        raise ValueError("--fuzzy-threshold must be between 0.0 and 1.0")
-    if args.close_duration_seconds < 0:
-        raise ValueError("--close-duration-seconds must be >= 0")
-    if args.duration_conflict_seconds < 0:
-        raise ValueError("--duration-conflict-seconds must be >= 0")
-    if args.duration_conflict_seconds < args.close_duration_seconds:
-        raise ValueError("--duration-conflict-seconds must be >= --close-duration-seconds")
-    if args.min_song_sim < 0 or args.min_song_sim > 1:
-        raise ValueError("--min-song-sim must be between 0.0 and 1.0")
-    if args.min_artist_sim < 0 or args.min_artist_sim > 1:
-        raise ValueError("--min-artist-sim must be between 0.0 and 1.0")
-    if args.top_k < 0:
-        raise ValueError("--top-k must be >= 0")
+    _validate_compare_tuning_args(args)
 
     extensions = _normalize_extensions(args.extensions)
-
-    def make_progress_callback(label: str):
-        def _callback(current: int, total: int, _: Path) -> None:
-            print(
-                f"\r[{label}] scanned {current}/{total} files",
-                end="",
-                file=sys.stderr,
-                flush=True,
-            )
-            if current == total:
-                print(file=sys.stderr, flush=True)
-
-        return _callback
-
-    files_a = collect_audio_metadata(
-        args.dir_a,
-        extensions=extensions,
-        progress_callback=(make_progress_callback("A") if args.progress else None),
-    )
-    files_b = collect_audio_metadata(
-        args.dir_b,
-        extensions=extensions,
-        progress_callback=(make_progress_callback("B") if args.progress else None),
-    )
-    compare_payload = compare_collections(
-        files_a=files_a,
-        files_b=files_b,
-        fuzzy_threshold=args.fuzzy_threshold,
-        close_duration_seconds=args.close_duration_seconds,
-        duration_conflict_seconds=args.duration_conflict_seconds,
-        min_song_similarity=args.min_song_sim,
-        min_artist_similarity=args.min_artist_sim,
-        top_k=args.top_k,
-    )
+    files_a, files_b = _collect_audio_pair(args.dir_a, args.dir_b, extensions, args.progress)
+    compare_payload = _compare_payload_from_args(args, files_a, files_b)
     plan_payload = build_copy_plan(compare_payload, args.dir_b)
-    filtered_ops, mode_skipped = filter_operations_for_mode(plan_payload["operations"], args.mode)
-    plan_payload["operations"] = filtered_ops
-    plan_payload["mode"] = args.mode
-    plan_payload["mode_skipped_count"] = len(mode_skipped)
-    plan_payload["mode_skipped_operations"] = mode_skipped
-    plan_payload["counts"]["operations"] = len(filtered_ops)
-    plan_payload["counts"]["add_to_b"] = len([op for op in filtered_ops if op.get("action") == "add_to_b"])
-    plan_payload["counts"]["replace_in_b_with_a"] = len(
-        [op for op in filtered_ops if op.get("action") == "replace_in_b_with_a"]
+    plan_payload = _apply_mode_to_plan_payload(
+        plan_payload, args.mode, args.dir_a, args.dir_b, compare_payload=compare_payload
     )
-    plan_payload["counts"]["keep_both_versions"] = len(
-        [op for op in filtered_ops if op.get("action") == "keep_both_versions"]
-    )
-    plan_payload["dir_a"] = str(args.dir_a)
-    plan_payload["dir_b"] = str(args.dir_b)
-    plan_payload["compare_summary"] = {
-        "exact_match_count": compare_payload["exact_match_count"],
-        "only_in_a_count": compare_payload["only_in_a_count"],
-        "only_in_b_count": compare_payload["only_in_b_count"],
-        "fuzzy_candidate_count": compare_payload["fuzzy_candidate_count"],
-        "fuzzy_rejection_count": compare_payload.get("fuzzy_rejection_count", 0),
-        "action_counts": compare_payload["action_counts"],
-    }
 
     if args.write_plan_json is not None:
         write_plan_json(args.write_plan_json, plan_payload)
@@ -768,59 +726,13 @@ def cmd_apply(args: argparse.Namespace) -> int:
         plan_payload = load_plan_json(args.from_plan_json)
         operations = plan_payload["operations"]
         source_decisions_file = plan_payload.get("source_decisions_file")
-        effective_dir_a = str(args.dir_a)
-        effective_dir_b = str(args.dir_b)
+        effective_dir_a = str(plan_payload.get("dir_a") or args.dir_a)
+        effective_dir_b = str(plan_payload.get("dir_b") or args.dir_b)
     else:
-        if args.fuzzy_threshold < 0 or args.fuzzy_threshold > 1:
-            raise ValueError("--fuzzy-threshold must be between 0.0 and 1.0")
-        if args.close_duration_seconds < 0:
-            raise ValueError("--close-duration-seconds must be >= 0")
-        if args.duration_conflict_seconds < 0:
-            raise ValueError("--duration-conflict-seconds must be >= 0")
-        if args.duration_conflict_seconds < args.close_duration_seconds:
-            raise ValueError("--duration-conflict-seconds must be >= --close-duration-seconds")
-        if args.min_song_sim < 0 or args.min_song_sim > 1:
-            raise ValueError("--min-song-sim must be between 0.0 and 1.0")
-        if args.min_artist_sim < 0 or args.min_artist_sim > 1:
-            raise ValueError("--min-artist-sim must be between 0.0 and 1.0")
-        if args.top_k < 0:
-            raise ValueError("--top-k must be >= 0")
-
+        _validate_compare_tuning_args(args)
         extensions = _normalize_extensions(args.extensions)
-
-        def make_progress_callback(label: str):
-            def _callback(current: int, total: int, _: Path) -> None:
-                print(
-                    f"\r[{label}] scanned {current}/{total} files",
-                    end="",
-                    file=sys.stderr,
-                    flush=True,
-                )
-                if current == total:
-                    print(file=sys.stderr, flush=True)
-
-            return _callback
-
-        files_a = collect_audio_metadata(
-            args.dir_a,
-            extensions=extensions,
-            progress_callback=(make_progress_callback("A") if args.progress else None),
-        )
-        files_b = collect_audio_metadata(
-            args.dir_b,
-            extensions=extensions,
-            progress_callback=(make_progress_callback("B") if args.progress else None),
-        )
-        compare_payload = compare_collections(
-            files_a=files_a,
-            files_b=files_b,
-            fuzzy_threshold=args.fuzzy_threshold,
-            close_duration_seconds=args.close_duration_seconds,
-            duration_conflict_seconds=args.duration_conflict_seconds,
-            min_song_similarity=args.min_song_sim,
-            min_artist_similarity=args.min_artist_sim,
-            top_k=args.top_k,
-        )
+        files_a, files_b = _collect_audio_pair(args.dir_a, args.dir_b, extensions, args.progress)
+        compare_payload = _compare_payload_from_args(args, files_a, files_b)
         plan_payload = build_copy_plan(compare_payload, args.dir_b)
         operations = plan_payload["operations"]
         effective_dir_a = str(args.dir_a)
@@ -956,20 +868,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
 
 
 def cmd_review(args: argparse.Namespace) -> int:
-    if args.fuzzy_threshold < 0 or args.fuzzy_threshold > 1:
-        raise ValueError("--fuzzy-threshold must be between 0.0 and 1.0")
-    if args.close_duration_seconds < 0:
-        raise ValueError("--close-duration-seconds must be >= 0")
-    if args.duration_conflict_seconds < 0:
-        raise ValueError("--duration-conflict-seconds must be >= 0")
-    if args.duration_conflict_seconds < args.close_duration_seconds:
-        raise ValueError("--duration-conflict-seconds must be >= --close-duration-seconds")
-    if args.min_song_sim < 0 or args.min_song_sim > 1:
-        raise ValueError("--min-song-sim must be between 0.0 and 1.0")
-    if args.min_artist_sim < 0 or args.min_artist_sim > 1:
-        raise ValueError("--min-artist-sim must be between 0.0 and 1.0")
-    if args.top_k < 0:
-        raise ValueError("--top-k must be >= 0")
+    _validate_compare_tuning_args(args)
     if args.page_size <= 0:
         raise ValueError("--page-size must be >= 1")
     if args.max_manual_items < 0:
@@ -978,40 +877,8 @@ def cmd_review(args: argparse.Namespace) -> int:
         raise ValueError("--start-index must be >= 1")
 
     extensions = _normalize_extensions(args.extensions)
-
-    def make_progress_callback(label: str):
-        def _callback(current: int, total: int, _: Path) -> None:
-            print(
-                f"\r[{label}] scanned {current}/{total} files",
-                end="",
-                file=sys.stderr,
-                flush=True,
-            )
-            if current == total:
-                print(file=sys.stderr, flush=True)
-
-        return _callback
-
-    files_a = collect_audio_metadata(
-        args.dir_a,
-        extensions=extensions,
-        progress_callback=(make_progress_callback("A") if args.progress else None),
-    )
-    files_b = collect_audio_metadata(
-        args.dir_b,
-        extensions=extensions,
-        progress_callback=(make_progress_callback("B") if args.progress else None),
-    )
-    compare_payload = compare_collections(
-        files_a=files_a,
-        files_b=files_b,
-        fuzzy_threshold=args.fuzzy_threshold,
-        close_duration_seconds=args.close_duration_seconds,
-        duration_conflict_seconds=args.duration_conflict_seconds,
-        min_song_similarity=args.min_song_sim,
-        min_artist_similarity=args.min_artist_sim,
-        top_k=args.top_k,
-    )
+    files_a, files_b = _collect_audio_pair(args.dir_a, args.dir_b, extensions, args.progress)
+    compare_payload = _compare_payload_from_args(args, files_a, files_b)
     candidates = extract_manual_review_candidates(compare_payload)
     review_summary = summarize_manual_review_candidates(candidates)
     if args.export_manual_review_json is not None:
@@ -1160,21 +1027,9 @@ def cmd_review(args: argparse.Namespace) -> int:
         print("Unknown command. Use n, p, done, q, or '<index> <choice>'")
 
     plan_payload = build_plan_from_review_decisions(candidates, decisions, args.dir_b)
-    filtered_ops, mode_skipped = filter_operations_for_mode(plan_payload["operations"], args.mode)
-    plan_payload["operations"] = filtered_ops
-    plan_payload["mode"] = args.mode
-    plan_payload["mode_skipped_count"] = len(mode_skipped)
-    plan_payload["mode_skipped_operations"] = mode_skipped
-    plan_payload["counts"]["operations"] = len(filtered_ops)
-    plan_payload["counts"]["add_to_b"] = len([op for op in filtered_ops if op.get("action") == "add_to_b"])
-    plan_payload["counts"]["replace_in_b_with_a"] = len(
-        [op for op in filtered_ops if op.get("action") == "replace_in_b_with_a"]
+    plan_payload = _apply_mode_to_plan_payload(
+        plan_payload, args.mode, args.dir_a, args.dir_b
     )
-    plan_payload["counts"]["keep_both_versions"] = len(
-        [op for op in filtered_ops if op.get("action") == "keep_both_versions"]
-    )
-    plan_payload["dir_a"] = str(args.dir_a)
-    plan_payload["dir_b"] = str(args.dir_b)
     plan_payload["manual_review_count"] = len(candidates)
     plan_payload["summary"] = review_summary
     if args.decisions_file is not None:

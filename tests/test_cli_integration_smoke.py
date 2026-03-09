@@ -121,6 +121,52 @@ class CliIntegrationSmokeTests(unittest.TestCase):
                 len(plan_payload["operations"]),
             )
 
+    def test_apply_from_plan_json_uses_plan_dir_metadata(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            src = tmp / "A_plan" / "song.wav"
+            dst = tmp / "B_plan" / "song.wav"
+            src.parent.mkdir(parents=True, exist_ok=True)
+            src.write_text("audio")
+            plan_path = tmp / "plan.json"
+            plan_payload = {
+                "dir_a": str(tmp / "A_plan"),
+                "dir_b": str(tmp / "B_plan"),
+                "operations": [
+                    {
+                        "action": "add_to_b",
+                        "source_path": str(src),
+                        "source_relative_path": "song.wav",
+                        "source_extension": ".wav",
+                        "source_codec": None,
+                        "preferred_destination_path": str(dst),
+                        "destination_path": str(dst),
+                        "replace_target_path": None,
+                    }
+                ],
+                "counts": {"operations": 1, "add_to_b": 1, "replace_in_b_with_a": 0, "keep_both_versions": 0},
+            }
+            plan_path.write_text(json.dumps(plan_payload), encoding="utf-8")
+
+            # Pass different CLI dirs; payload should still report plan's dir_a/dir_b.
+            out = _run_cli(
+                [
+                    "apply",
+                    str(tmp / "CLI_A"),
+                    str(tmp / "CLI_B"),
+                    "--from-plan-json",
+                    str(plan_path),
+                    "--dry-run",
+                    "--yes",
+                    "--json",
+                ],
+                cwd=repo_root,
+            )
+            payload = json.loads(out.stdout)
+            self.assertEqual(payload["dir_a"], str(tmp / "A_plan"))
+            self.assertEqual(payload["dir_b"], str(tmp / "B_plan"))
+
 
 if __name__ == "__main__":
     unittest.main()

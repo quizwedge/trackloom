@@ -167,6 +167,26 @@ class CompareCollectionsTests(unittest.TestCase):
         self.assertEqual(match["duplicate_policy"]["classification"], "duration_conflict")
         self.assertEqual(match["recommended_action"], "manual_review")
 
+    def test_manual_review_action_count_matches_top_k_truncated_fuzzy_candidates(self):
+        a1 = make_file("A/Album/Believer.wav", "Imagine Dragons", "Evolve", "Believer", 204.0)
+        a2 = make_file("A/Album/Natural.wav", "Imagine Dragons", "Evolve", "Natural", 185.0)
+        b1 = make_file("B/Album/Beliver.mp3", "Imagine Dragon", "Evolve", "Beliver", 205.0)
+        b2 = make_file("B/Album/Naturl.mp3", "Imagine Dragon", "Evolve", "Naturl", 186.0)
+
+        result = compare_collections(
+            [a1, a2],
+            [b1, b2],
+            fuzzy_threshold=0.55,
+            min_song_similarity=0.55,
+            min_artist_similarity=0.55,
+            close_duration_seconds=1.0,
+            duration_conflict_seconds=5.0,
+            top_k=1,
+        )
+
+        self.assertEqual(result["fuzzy_candidate_count"], 1)
+        self.assertEqual(result["action_counts"]["manual_review"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

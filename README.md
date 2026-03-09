@@ -192,6 +192,7 @@ trackloom plan /path/to/A /path/to/B --mode plex --json > /tmp/plan-plex.json
   - only applies to `replace_in_b_with_a` actions
   - moves replaced B files to quarantine instead of deleting
 - in `--mode plex`, incompatible operations are skipped before execution and included in output/report payloads
+- per-operation copy/move failures are recorded as skipped `io_error` items and processing continues for remaining operations
 
 `apply` prints a concise "planned changes in B" summary before confirmation.
 Apply reports include source linkage metadata (`source_plan_json`, `source_decisions_file`) when available.

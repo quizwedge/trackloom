@@ -56,66 +56,101 @@ def execute_operations(
         preferred_dst = Path(preferred_dst_raw) if preferred_dst_raw else dst
         replace_target_raw = operation.get("replace_target_path")
         replace_target = Path(replace_target_raw) if replace_target_raw else None
-
-        if not src.exists():
-            skipped.append(
-                {
-                    "operation": operation,
-                    "reason": "source_missing",
-                }
-            )
-            continue
-
         quarantine_move = None
         effective_dst = dst
-        if (
-            cleanup_mode == "move-to-quarantine"
-            and operation.get("action") == "replace_in_b_with_a"
-            and replace_target is not None
-            and replace_target.exists()
-        ):
-            qdst = _quarantine_destination(replace_target, dir_b, quarantine_dir)
+
+        try:
+            if not src.exists():
+                skipped.append(
+                    {
+                        "operation": operation,
+                        "reason": "source_missing",
+                    }
+                )
+                continue
+
+            if (
+                cleanup_mode == "move-to-quarantine"
+                and operation.get("action") == "replace_in_b_with_a"
+                and replace_target is not None
+                and replace_target.exists()
+            ):
+                qdst = _quarantine_destination(replace_target, dir_b, quarantine_dir)
+                if dry_run:
+                    quarantine_move = {
+                        "from": str(replace_target),
+                        "to": str(qdst),
+                        "status": "dry_run",
+                    }
+                else:
+                    qdst.parent.mkdir(parents=True, exist_ok=True)
+                    replace_target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(replace_target), str(qdst))
+                    quarantine_move = {
+                        "from": str(replace_target),
+                        "to": str(qdst),
+                        "status": "moved",
+                    }
+                effective_dst = preferred_dst
+
+            if effective_dst.exists():
+                skipped.append(
+                    {
+                        "operation": operation,
+                        "effective_destination_path": str(effective_dst),
+                        "quarantine_move": quarantine_move,
+                        "reason": "destination_exists",
+                    }
+                )
+                continue
+
             if dry_run:
-                quarantine_move = {"from": str(replace_target), "to": str(qdst), "status": "dry_run"}
-            else:
-                qdst.parent.mkdir(parents=True, exist_ok=True)
-                replace_target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.move(str(replace_target), str(qdst))
-                quarantine_move = {"from": str(replace_target), "to": str(qdst), "status": "moved"}
-            effective_dst = preferred_dst
+                executed.append(
+                    {
+                        "operation": operation,
+                        "effective_destination_path": str(effective_dst),
+                        "quarantine_move": quarantine_move,
+                        "status": "dry_run",
+                    }
+                )
+                continue
 
-        if effective_dst.exists():
-            skipped.append(
-                {
-                    "operation": operation,
-                    "effective_destination_path": str(effective_dst),
-                    "quarantine_move": quarantine_move,
-                    "reason": "destination_exists",
-                }
-            )
-            continue
-
-        if dry_run:
+            effective_dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, effective_dst)
             executed.append(
                 {
                     "operation": operation,
                     "effective_destination_path": str(effective_dst),
                     "quarantine_move": quarantine_move,
-                    "status": "dry_run",
+                    "status": "copied",
+                }
+            )
+        except Exception as err:
+            rollback_status = None
+            if (
+                quarantine_move
+                and quarantine_move.get("status") == "moved"
+                and replace_target is not None
+            ):
+                moved_to = Path(quarantine_move["to"])
+                try:
+                    if moved_to.exists() and not replace_target.exists():
+                        replace_target.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.move(str(moved_to), str(replace_target))
+                        rollback_status = "rolled_back"
+                except Exception:
+                    rollback_status = "rollback_failed"
+            skipped.append(
+                {
+                    "operation": operation,
+                    "effective_destination_path": str(effective_dst),
+                    "quarantine_move": quarantine_move,
+                    "quarantine_rollback": rollback_status,
+                    "reason": "io_error",
+                    "error": str(err),
                 }
             )
             continue
-
-        effective_dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, effective_dst)
-        executed.append(
-            {
-                "operation": operation,
-                "effective_destination_path": str(effective_dst),
-                "quarantine_move": quarantine_move,
-                "status": "copied",
-            }
-        )
 
     return {
         "requested_count": len(operations),

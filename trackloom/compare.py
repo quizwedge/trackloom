@@ -324,7 +324,6 @@ def compare_collections(
                 )
                 # Fuzzy matches should be reviewed unless confidence rules are extended.
                 recommended_action = "manual_review"
-                action_counts["manual_review"] += 1
                 fuzzy_candidates.append(
                     FuzzyCandidate(
                         score=score,
@@ -344,6 +343,8 @@ def compare_collections(
         fuzzy_candidates = fuzzy_candidates[:top_k]
     else:
         fuzzy_candidates = []
+    # Keep action counts consistent with final candidate payload after top_k truncation.
+    action_counts["manual_review"] = len(fuzzy_candidates)
 
     return {
         "count_a": len(files_a),
