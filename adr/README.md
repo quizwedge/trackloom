@@ -18,3 +18,4 @@
 - [0015: Reporting and Exit-Code Contract Stability](0015-reporting-and-exit-code-contract-stability.md)
 - [0016: Audio Fingerprinting Deferred](0016-audio-fingerprinting-deferred.md)
 - [0017: Plex Mode Operation Filtering](0017-plex-mode-operation-filtering.md)
+- [0018: Demo Fixtures Use ffmpeg for Encoded Formats and mutagen for Tagging](0018-demo-fixtures-generation-with-ffmpeg.md)

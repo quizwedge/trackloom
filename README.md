@@ -39,6 +39,18 @@ trackloom help apply
 trackloom help review
 ```
 
+Demo fixtures:
+
+```bash
+python3 scripts/make_demo_data.py --force
+trackloom parse demo_data/A --extensions .wav .mp3 .m4a .flac .m4p --json
+```
+
+`ffmpeg` is required to generate tagged `mp3`, `m4a`, and `flac` demo fixtures.
+Without `ffmpeg`, the generator still creates `wav` and `.m4p` demo files.
+
+See `demo/README.md` for full demo commands.
+
 ## First Real Run
 
 ```bash
