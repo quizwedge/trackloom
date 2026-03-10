@@ -19,3 +19,4 @@
 - [0016: Audio Fingerprinting Deferred](0016-audio-fingerprinting-deferred.md)
 - [0017: Plex Mode Operation Filtering](0017-plex-mode-operation-filtering.md)
 - [0018: Demo Fixtures Use ffmpeg for Encoded Formats and mutagen for Tagging](0018-demo-fixtures-generation-with-ffmpeg.md)
+- [0019: Exact Matching Requires Complete Canonical Key](0019-exact-match-requires-complete-key.md)

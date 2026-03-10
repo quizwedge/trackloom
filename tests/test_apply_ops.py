@@ -98,6 +98,83 @@ class ApplyOpsTests(unittest.TestCase):
             self.assertEqual(preferred_dst.read_text(), "new")
             self.assertEqual(moved.read_text(), "old")
 
+    def test_replace_with_quarantine_dry_run_reports_execution(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dir_b = root / "library_b"
+            quarantine = root / "quarantine"
+            src = root / "a" / "song.wav"
+            old_b = dir_b / "Artist" / "Album" / "song.mp3"
+            preferred_dst = old_b
+            planned_dst = dir_b / "Artist" / "Album" / "song (from A).wav"
+
+            src.parent.mkdir(parents=True)
+            old_b.parent.mkdir(parents=True)
+            src.write_text("new")
+            old_b.write_text("old")
+
+            operation = {
+                "action": "replace_in_b_with_a",
+                "source_path": str(src),
+                "source_relative_path": "Artist/Album/song.wav",
+                "preferred_destination_path": str(preferred_dst),
+                "destination_path": str(planned_dst),
+                "replace_target_path": str(old_b),
+            }
+            result = execute_operations(
+                [operation],
+                dry_run=True,
+                cleanup_mode="move-to-quarantine",
+                quarantine_dir=quarantine,
+                dir_b=dir_b,
+            )
+
+            self.assertEqual(result["executed_count"], 1)
+            self.assertEqual(result["skipped_count"], 0)
+            self.assertEqual(result["executed"][0]["status"], "dry_run")
+            self.assertEqual(result["executed"][0]["quarantine_move"]["status"], "dry_run")
+            self.assertTrue(old_b.exists())
+            self.assertFalse(quarantine.exists())
+
+    def test_replace_with_quarantine_skips_without_moving_when_destination_exists(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dir_b = root / "library_b"
+            quarantine = root / "quarantine"
+            src = root / "a" / "song.wav"
+            old_b = dir_b / "Artist" / "Album" / "song.mp3"
+            existing_dst = dir_b / "Artist" / "Album" / "song.wav"
+            planned_dst = dir_b / "Artist" / "Album" / "song (from A).wav"
+
+            src.parent.mkdir(parents=True)
+            old_b.parent.mkdir(parents=True)
+            existing_dst.parent.mkdir(parents=True, exist_ok=True)
+            src.write_text("new")
+            old_b.write_text("old")
+            existing_dst.write_text("existing")
+
+            operation = {
+                "action": "replace_in_b_with_a",
+                "source_path": str(src),
+                "source_relative_path": "Artist/Album/song.wav",
+                "preferred_destination_path": str(existing_dst),
+                "destination_path": str(planned_dst),
+                "replace_target_path": str(old_b),
+            }
+            result = execute_operations(
+                [operation],
+                cleanup_mode="move-to-quarantine",
+                quarantine_dir=quarantine,
+                dir_b=dir_b,
+            )
+
+            self.assertEqual(result["executed_count"], 0)
+            self.assertEqual(result["skipped_count"], 1)
+            self.assertEqual(result["skipped"][0]["reason"], "destination_exists")
+            self.assertTrue(old_b.exists())
+            self.assertEqual(old_b.read_text(), "old")
+            self.assertFalse(quarantine.exists())
+
     def test_quarantine_mode_requires_quarantine_dir(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

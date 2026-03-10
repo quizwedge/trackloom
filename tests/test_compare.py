@@ -187,6 +187,40 @@ class CompareCollectionsTests(unittest.TestCase):
         self.assertEqual(result["fuzzy_candidate_count"], 1)
         self.assertEqual(result["action_counts"]["manual_review"], 1)
 
+    def test_missing_canonical_fields_are_not_exact_matches(self):
+        a = make_file("A/Unknown.mp3", None, None, None, 200.0)
+        b = make_file("B/Unknown.mp3", None, None, None, 201.0)
+
+        result = compare_collections([a], [b], top_k=5)
+
+        self.assertEqual(result["exact_match_count"], 0)
+        self.assertEqual(result["only_in_a_count"], 1)
+        self.assertEqual(result["only_in_b_count"], 1)
+        self.assertEqual(result["fuzzy_candidate_count"], 0)
+
+    def test_manual_review_action_count_includes_exact_matches(self):
+        a = make_file("A/Album/Song.mp3", "Artist", "Album", "Song", 200.0)
+        b = make_file("B/Album/Song.mp3", "Artist", "Album", "Song", 205.0)
+
+        result = compare_collections([a], [b], top_k=0)
+
+        self.assertEqual(result["exact_match_count"], 1)
+        self.assertEqual(result["action_counts"]["manual_review"], 1)
+
+    def test_deterministic_pairing_for_duplicate_keys(self):
+        a1 = make_file("A/Album/02.mp3", "Artist", "Album", "Song", 200.0)
+        a2 = make_file("A/Album/01.mp3", "Artist", "Album", "Song", 200.0)
+        b1 = make_file("B/Album/01.mp3", "Artist", "Album", "Song", 200.0)
+        b2 = make_file("B/Album/02.mp3", "Artist", "Album", "Song", 200.0)
+
+        result = compare_collections([a1, a2], [b1, b2], top_k=0)
+
+        pairs = {
+            (Path(match["file_a"]["relative_path"]).name, Path(match["file_b"]["relative_path"]).name)
+            for match in result["exact_matches"]
+        }
+        self.assertEqual(pairs, {("01.mp3", "01.mp3"), ("02.mp3", "02.mp3")})
+
 
 if __name__ == "__main__":
     unittest.main()

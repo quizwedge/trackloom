@@ -22,6 +22,22 @@ def canonical_key(item: ParsedAudioFile) -> Tuple[Optional[str], Optional[str], 
     return (artist, album, song)
 
 
+def _has_complete_key(key: Tuple[Optional[str], Optional[str], Optional[str]]) -> bool:
+    return all(part is not None for part in key)
+
+
+def _stable_item_sort_key(item: ParsedAudioFile) -> str:
+    return (item.relative_path or "").casefold()
+
+
+def _stable_key_sort_value(key: Tuple[Optional[str], Optional[str], Optional[str]]) -> Tuple[str, str, str]:
+    return (
+        (key[0] or "").casefold(),
+        (key[1] or "").casefold(),
+        (key[2] or "").casefold(),
+    )
+
+
 def _text_similarity(a: Optional[str], b: Optional[str]) -> float:
     if not a or not b:
         return 0.0
@@ -196,11 +212,6 @@ def compare_collections(
     key_to_a: Dict[Tuple[Optional[str], Optional[str], Optional[str]], List[ParsedAudioFile]] = {}
     key_to_b: Dict[Tuple[Optional[str], Optional[str], Optional[str]], List[ParsedAudioFile]] = {}
 
-    for item in files_a:
-        key_to_a.setdefault(canonical_key(item), []).append(item)
-    for item in files_b:
-        key_to_b.setdefault(canonical_key(item), []).append(item)
-
     exact_matches = []
     action_counts = {
         "add_to_b": 0,
@@ -219,10 +230,37 @@ def compare_collections(
     unmatched_a: List[ParsedAudioFile] = []
     unmatched_b: List[ParsedAudioFile] = []
 
+    for item in files_a:
+        key = canonical_key(item)
+        if _has_complete_key(key):
+            key_to_a.setdefault(key, []).append(item)
+        else:
+            unmatched_a.append(item)
+            action_counts["add_to_b"] += 1
+            only_in_a.append(
+                {
+                    "recommended_action": "add_to_b",
+                    "file": item.to_dict(),
+                }
+            )
+    for item in files_b:
+        key = canonical_key(item)
+        if _has_complete_key(key):
+            key_to_b.setdefault(key, []).append(item)
+        else:
+            unmatched_b.append(item)
+            action_counts["keep_b"] += 1
+            only_in_b.append(
+                {
+                    "recommended_action": "keep_b",
+                    "file": item.to_dict(),
+                }
+            )
+
     all_keys = set(key_to_a.keys()) | set(key_to_b.keys())
-    for key in all_keys:
-        a_items = key_to_a.get(key, [])
-        b_items = key_to_b.get(key, [])
+    for key in sorted(all_keys, key=_stable_key_sort_value):
+        a_items = sorted(key_to_a.get(key, []), key=_stable_item_sort_key)
+        b_items = sorted(key_to_b.get(key, []), key=_stable_item_sort_key)
         paired = min(len(a_items), len(b_items))
         for idx in range(paired):
             duplicate_policy = assess_duplicate_pair(
@@ -344,7 +382,7 @@ def compare_collections(
     else:
         fuzzy_candidates = []
     # Keep action counts consistent with final candidate payload after top_k truncation.
-    action_counts["manual_review"] = len(fuzzy_candidates)
+    action_counts["manual_review"] += len(fuzzy_candidates)
 
     return {
         "count_a": len(files_a),

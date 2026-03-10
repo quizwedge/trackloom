@@ -10,7 +10,7 @@ Trackloom is a local-first CLI for safe music-library merge planning.
 - computes normalized fields and version hints
 
 2. `compare`
-- builds canonical keys (`artist + album + song`, normalized tag-first)
+- builds canonical keys (`artist + album + song`, normalized tag-first, requires all fields)
 - classifies exact matches, only-in-A/B, and fuzzy candidates
 - applies duplicate policy (version/duration/fidelity/lossless boundary)
 

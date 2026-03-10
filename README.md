@@ -141,7 +141,7 @@ For each audio file in both directories, step 1 extracts:
 
 `compare` reports:
 
-- exact matches on canonical key (`artist + album + song`, preferring normalized tag fields)
+- exact matches on canonical key (`artist + album + song`, preferring normalized tag fields; requires all fields)
 - tracks only in A
 - tracks only in B
 - fuzzy candidates scored from song similarity, artist similarity, and duration similarity

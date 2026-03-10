@@ -58,7 +58,13 @@ def execute_operations(
         replace_target_raw = operation.get("replace_target_path")
         replace_target = Path(replace_target_raw) if replace_target_raw else None
         quarantine_move = None
-        effective_dst = dst
+        should_quarantine = (
+            cleanup_mode == "move-to-quarantine"
+            and operation.get("action") == "replace_in_b_with_a"
+            and replace_target is not None
+            and replace_target.exists()
+        )
+        effective_dst = preferred_dst if should_quarantine else dst
 
         try:
             if not src.exists():
@@ -70,12 +76,22 @@ def execute_operations(
                 )
                 continue
 
-            if (
-                cleanup_mode == "move-to-quarantine"
-                and operation.get("action") == "replace_in_b_with_a"
-                and replace_target is not None
-                and replace_target.exists()
-            ):
+            will_clear_effective_dst = (
+                should_quarantine and replace_target is not None and effective_dst == replace_target
+            )
+            destination_blocked = effective_dst.exists() and not will_clear_effective_dst
+            if destination_blocked:
+                skipped.append(
+                    {
+                        "operation": operation,
+                        "effective_destination_path": str(effective_dst),
+                        "quarantine_move": quarantine_move,
+                        "reason": "destination_exists",
+                    }
+                )
+                continue
+
+            if should_quarantine:
                 qdst = _quarantine_destination(replace_target, dir_b, quarantine_dir)
                 if dry_run:
                     quarantine_move = {
@@ -92,18 +108,6 @@ def execute_operations(
                         "to": str(qdst),
                         "status": "moved",
                     }
-                effective_dst = preferred_dst
-
-            if effective_dst.exists():
-                skipped.append(
-                    {
-                        "operation": operation,
-                        "effective_destination_path": str(effective_dst),
-                        "quarantine_move": quarantine_move,
-                        "reason": "destination_exists",
-                    }
-                )
-                continue
 
             if dry_run:
                 executed.append(
