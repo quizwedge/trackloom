@@ -106,18 +106,28 @@ python3 -m pytest -q
 
 ## Key Files
 
-- CLI entrypoint: `trackloom/cli.py`
+- CLI entrypoint + arg parser: `trackloom/cli.py`
+- Command handlers:
+  - `trackloom/commands/parse.py`
+  - `trackloom/commands/compare.py`
+  - `trackloom/commands/plan.py`
+  - `trackloom/commands/review.py`
+  - `trackloom/commands/apply.py`
+- Command shared helpers: `trackloom/commands/common.py`
 - Parsing: `trackloom/parser.py`
 - Compare logic: `trackloom/compare.py`
 - Planning: `trackloom/planner.py`
 - Apply execution: `trackloom/apply_ops.py`
 - Review helpers: `trackloom/review.py`
+- Shared compare tuning config: `trackloom/config.py`
+- Typed operation/result models: `trackloom/models.py`
 - I/O helpers:
   - `trackloom/plan_io.py`
   - `trackloom/decision_io.py`
   - `trackloom/report_io.py`
 - Tests: `tests/`
 - Architecture decisions: `adr/`
+- Architecture overview: `docs/ARCHITECTURE.md`
 
 ## ADR Requirement
 

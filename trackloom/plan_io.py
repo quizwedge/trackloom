@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
+from .models import Operation
 
 REQUIRED_OPERATION_KEYS = {
     "action",
@@ -33,7 +34,7 @@ def load_plan_json(path: Path) -> Dict[str, Any]:
     if not isinstance(operations, list):
         raise ValueError("Plan JSON must include an operations list.")
 
-    normalized_ops: List[Dict[str, Any]] = []
+    normalized_ops: List[Operation] = []
     for idx, op in enumerate(operations):
         if not isinstance(op, dict):
             raise ValueError(f"Operation at index {idx} must be an object.")

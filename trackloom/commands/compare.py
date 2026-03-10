@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Dan Getz, Jr.
+from __future__ import annotations
+
+import json
+from argparse import Namespace
+
+from ..config import CompareConfig
+from .common import collect_audio_pair, compare_payload, normalize_extensions
+
+
+def cmd_compare(args: Namespace) -> int:
+    compare_config = CompareConfig.from_args(args)
+    compare_config.validate()
+    extensions = normalize_extensions(args.extensions)
+    files_a, files_b = collect_audio_pair(args.dir_a, args.dir_b, extensions, args.progress)
+    payload = compare_payload(files_a, files_b, compare_config)
+    payload["dir_a"] = str(args.dir_a)
+    payload["dir_b"] = str(args.dir_b)
+
+    if args.json:
+        print(json.dumps(payload, indent=2))
+        return 0
+
+    print(f"Compared A={args.dir_a} vs B={args.dir_b}")
+    print(
+        f"Exact matches: {payload['exact_match_count']} | "
+        f"Only in A: {payload['only_in_a_count']} | "
+        f"Only in B: {payload['only_in_b_count']} | "
+        f"Fuzzy candidates: {payload['fuzzy_candidate_count']}"
+    )
+    policy_counts = payload.get("duplicate_policy_counts", {})
+    if policy_counts:
+        print(
+            f"Duplicate policy (exact matches): likely_duplicate={policy_counts.get('likely_duplicate', 0)} | "
+            f"version_conflict={policy_counts.get('version_conflict', 0)} | "
+            f"duration_conflict={policy_counts.get('duration_conflict', 0)}"
+        )
+    action_counts = payload.get("action_counts", {})
+    if action_counts:
+        print(
+            f"Actions: add_to_b={action_counts.get('add_to_b', 0)} | "
+            f"replace_in_b_with_a={action_counts.get('replace_in_b_with_a', 0)} | "
+            f"keep_b={action_counts.get('keep_b', 0)} | "
+            f"keep_both_versions={action_counts.get('keep_both_versions', 0)} | "
+            f"manual_review={action_counts.get('manual_review', 0)}"
+        )
+    if payload["fuzzy_candidates"]:
+        print("Top fuzzy candidates:")
+        for candidate in payload["fuzzy_candidates"]:
+            print(
+                f"- score={candidate['score']:.3f} "
+                f"A={candidate['file_a']['relative_path']} "
+                f"<-> B={candidate['file_b']['relative_path']}"
+            )
+    if payload.get("fuzzy_rejection_count"):
+        print(f"Fuzzy rejections logged: {payload['fuzzy_rejection_count']}")
+    return 0

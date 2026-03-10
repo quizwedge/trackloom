@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
+from .models import ExecuteResult, ExecutedOperation, Operation, SkippedOperation
 
 def _unique_path(base_path: Path) -> Path:
     if not base_path.exists():
@@ -32,12 +33,12 @@ def _quarantine_destination(
 
 
 def execute_operations(
-    operations: List[Dict[str, Any]],
+    operations: list[Operation],
     dry_run: bool = False,
     cleanup_mode: str = "none",
     quarantine_dir: Optional[Path] = None,
     dir_b: Optional[Path] = None,
-) -> Dict[str, Any]:
+) -> ExecuteResult:
     if cleanup_mode not in {"none", "move-to-quarantine"}:
         raise ValueError("cleanup_mode must be 'none' or 'move-to-quarantine'")
     if cleanup_mode == "move-to-quarantine":
@@ -46,8 +47,8 @@ def execute_operations(
         if dir_b is None:
             raise ValueError("dir_b is required for move-to-quarantine mode")
 
-    executed: List[Dict[str, Any]] = []
-    skipped: List[Dict[str, Any]] = []
+    executed: list[ExecutedOperation] = []
+    skipped: list[SkippedOperation] = []
 
     for operation in operations:
         src = Path(operation["source_path"])

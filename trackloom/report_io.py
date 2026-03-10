@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
+from .models import ExecuteResult
+
 
 def write_report_json(path: Path, payload: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -17,7 +19,7 @@ def write_report_json(path: Path, payload: Dict[str, Any]) -> None:
 
 def write_report_csv(path: Path, payload: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    result = payload.get("result", {})
+    result: ExecuteResult = payload.get("result", {})
     executed: List[Dict[str, Any]] = result.get("executed", [])
     skipped: List[Dict[str, Any]] = result.get("skipped", [])
 

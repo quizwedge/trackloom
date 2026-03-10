@@ -20,5 +20,5 @@ dependencies = [
 trackloom = "trackloom.cli:main"
 
 [tool.setuptools]
-packages = ["trackloom"]
+packages = ["trackloom", "trackloom.commands"]
 license-files = ["LICENSE"]

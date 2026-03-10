@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Set
 
+from .models import Operation
 
 COPY_ACTIONS = {"add_to_b", "replace_in_b_with_a", "keep_both_versions"}
 
@@ -28,7 +29,7 @@ def _unique_destination(dest_root: Path, relative_path: str, reserved: Set[str])
 
 
 def build_copy_plan(compare_payload: Dict[str, Any], dir_b: Path) -> Dict[str, Any]:
-    operations: List[Dict[str, Any]] = []
+    operations: List[Operation] = []
     reserved_destinations: Set[str] = set()
 
     def maybe_add_operation(
