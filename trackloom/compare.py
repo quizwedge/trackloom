@@ -236,26 +236,12 @@ def compare_collections(
             key_to_a.setdefault(key, []).append(item)
         else:
             unmatched_a.append(item)
-            action_counts["add_to_b"] += 1
-            only_in_a.append(
-                {
-                    "recommended_action": "add_to_b",
-                    "file": item.to_dict(),
-                }
-            )
     for item in files_b:
         key = canonical_key(item)
         if _has_complete_key(key):
             key_to_b.setdefault(key, []).append(item)
         else:
             unmatched_b.append(item)
-            action_counts["keep_b"] += 1
-            only_in_b.append(
-                {
-                    "recommended_action": "keep_b",
-                    "file": item.to_dict(),
-                }
-            )
 
     all_keys = set(key_to_a.keys()) | set(key_to_b.keys())
     for key in sorted(all_keys, key=_stable_key_sort_value):
@@ -284,25 +270,9 @@ def compare_collections(
         if len(a_items) > paired:
             extras = a_items[paired:]
             unmatched_a.extend(extras)
-            for item in extras:
-                action_counts["add_to_b"] += 1
-                only_in_a.append(
-                    {
-                        "recommended_action": "add_to_b",
-                        "file": item.to_dict(),
-                    }
-                )
         if len(b_items) > paired:
             extras = b_items[paired:]
             unmatched_b.extend(extras)
-            for item in extras:
-                action_counts["keep_b"] += 1
-                only_in_b.append(
-                    {
-                        "recommended_action": "keep_b",
-                        "file": item.to_dict(),
-                    }
-                )
 
     fuzzy_candidates: List[FuzzyCandidate] = []
     fuzzy_rejections = []
@@ -381,6 +351,32 @@ def compare_collections(
         fuzzy_candidates = fuzzy_candidates[:top_k]
     else:
         fuzzy_candidates = []
+
+    fuzzy_a_ids = {candidate.file_a.absolute_path for candidate in fuzzy_candidates}
+    fuzzy_b_ids = {candidate.file_b.absolute_path for candidate in fuzzy_candidates}
+
+    for item in unmatched_a:
+        if item.absolute_path in fuzzy_a_ids:
+            continue
+        only_in_a.append(
+            {
+                "recommended_action": "add_to_b",
+                "file": item.to_dict(),
+            }
+        )
+        action_counts["add_to_b"] += 1
+
+    for item in unmatched_b:
+        if item.absolute_path in fuzzy_b_ids:
+            continue
+        only_in_b.append(
+            {
+                "recommended_action": "keep_b",
+                "file": item.to_dict(),
+            }
+        )
+        action_counts["keep_b"] += 1
+
     # Keep action counts consistent with final candidate payload after top_k truncation.
     action_counts["manual_review"] += len(fuzzy_candidates)
 

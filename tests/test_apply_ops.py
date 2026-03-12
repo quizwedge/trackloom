@@ -175,6 +175,48 @@ class ApplyOpsTests(unittest.TestCase):
             self.assertEqual(old_b.read_text(), "old")
             self.assertFalse(quarantine.exists())
 
+    def test_replace_with_quarantine_allows_symlinked_dir_b(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dir_b_real = root / "library_b_real"
+            dir_b_real.mkdir(parents=True)
+            dir_b_link = root / "library_b"
+            try:
+                dir_b_link.symlink_to(dir_b_real, target_is_directory=True)
+            except OSError:
+                self.skipTest("symlink not supported on this platform")
+
+            quarantine = root / "quarantine"
+            src = root / "a" / "song.wav"
+            old_b = dir_b_real / "Artist" / "Album" / "song.mp3"
+            preferred_dst = dir_b_link / "Artist" / "Album" / "song.mp3"
+            planned_dst = dir_b_link / "Artist" / "Album" / "song (from A).wav"
+
+            src.parent.mkdir(parents=True)
+            old_b.parent.mkdir(parents=True)
+            src.write_text("new")
+            old_b.write_text("old")
+
+            operation = {
+                "action": "replace_in_b_with_a",
+                "source_path": str(src),
+                "source_relative_path": "Artist/Album/song.wav",
+                "preferred_destination_path": str(preferred_dst),
+                "destination_path": str(planned_dst),
+                "replace_target_path": str(old_b),
+            }
+            result = execute_operations(
+                [operation],
+                cleanup_mode="move-to-quarantine",
+                quarantine_dir=quarantine,
+                dir_b=dir_b_link,
+            )
+
+            self.assertEqual(result["executed_count"], 1)
+            self.assertTrue(preferred_dst.exists())
+            moved = quarantine / "Artist" / "Album" / "song.mp3"
+            self.assertTrue(moved.exists())
+
     def test_quarantine_mode_requires_quarantine_dir(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -218,6 +260,30 @@ class ApplyOpsTests(unittest.TestCase):
             self.assertTrue(dst2.exists())
             self.assertFalse(dst1.exists())
             self.assertEqual(result["skipped"][0]["reason"], "io_error")
+
+    def test_partial_copy_cleanup_does_not_leave_temp_or_destination(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src = root / "src" / "song.mp3"
+            dst = root / "dst" / "song.mp3"
+            src.parent.mkdir(parents=True)
+            src.write_text("new")
+
+            def flaky_copy2(source, dest, *args, **kwargs):
+                Path(dest).write_text("partial")
+                raise OSError("simulated copy failure")
+
+            with patch("trackloom.apply_ops.shutil.copy2", side_effect=flaky_copy2):
+                result = execute_operations(
+                    [{"action": "add_to_b", "source_path": str(src), "destination_path": str(dst)}]
+                )
+
+            self.assertEqual(result["executed_count"], 0)
+            self.assertEqual(result["skipped_count"], 1)
+            self.assertFalse(dst.exists())
+            if dst.parent.exists():
+                temp_files = [p.name for p in dst.parent.iterdir() if p.name.startswith(".trackloom_tmp_")]
+                self.assertEqual(temp_files, [])
 
     def test_replace_quarantine_rolls_back_on_copy_failure(self):
         with tempfile.TemporaryDirectory() as tmp:

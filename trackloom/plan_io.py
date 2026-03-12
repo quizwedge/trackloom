@@ -15,6 +15,8 @@ REQUIRED_OPERATION_KEYS = {
     "destination_path",
 }
 
+ALLOWED_ACTIONS = {"add_to_b", "replace_in_b_with_a", "keep_both_versions"}
+
 
 def write_plan_json(path: Path, payload: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -58,3 +60,41 @@ def load_plan_json(path: Path) -> Dict[str, Any]:
     result = dict(data)
     result["operations"] = normalized_ops
     return result
+
+
+def _resolve_path(path: str) -> Path:
+    return Path(path).expanduser().resolve()
+
+
+def _ensure_within(root: Path, path: Path, label: str, idx: int) -> None:
+    try:
+        path.relative_to(root)
+    except ValueError as exc:
+        raise ValueError(
+            f"Operation at index {idx} has {label} outside {root}"
+        ) from exc
+
+
+def validate_plan_operations(operations: List[Operation], dir_a: Path, dir_b: Path) -> None:
+    root_a = _resolve_path(str(dir_a))
+    root_b = _resolve_path(str(dir_b))
+
+    for idx, op in enumerate(operations):
+        action = op.get("action")
+        if action not in ALLOWED_ACTIONS:
+            raise ValueError(f"Operation at index {idx} has unsupported action: {action}")
+
+        source_path = _resolve_path(str(op.get("source_path")))
+        destination_path = _resolve_path(str(op.get("destination_path")))
+        _ensure_within(root_a, source_path, "source_path", idx)
+        _ensure_within(root_b, destination_path, "destination_path", idx)
+
+        preferred_destination = op.get("preferred_destination_path")
+        if preferred_destination:
+            preferred_path = _resolve_path(str(preferred_destination))
+            _ensure_within(root_b, preferred_path, "preferred_destination_path", idx)
+
+        replace_target = op.get("replace_target_path")
+        if replace_target:
+            replace_path = _resolve_path(str(replace_target))
+            _ensure_within(root_b, replace_path, "replace_target_path", idx)

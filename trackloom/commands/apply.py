@@ -9,7 +9,7 @@ from pathlib import Path
 
 from ..apply_ops import execute_operations
 from ..config import CompareConfig
-from ..plan_io import load_plan_json
+from ..plan_io import load_plan_json, validate_plan_operations
 from ..planner import build_copy_plan
 from ..report_io import write_report_csv, write_report_json
 from .common import (
@@ -32,6 +32,11 @@ def cmd_apply(args: Namespace) -> int:
         source_decisions_file = plan_payload.get("source_decisions_file")
         effective_dir_a = str(plan_payload.get("dir_a") or args.dir_a)
         effective_dir_b = str(plan_payload.get("dir_b") or args.dir_b)
+        validate_plan_operations(
+            operations,
+            Path(effective_dir_a),
+            Path(effective_dir_b),
+        )
     else:
         compare_config = CompareConfig.from_args(args)
         compare_config.validate()

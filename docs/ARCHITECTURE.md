@@ -7,7 +7,7 @@ Trackloom is a local-first CLI for safe music-library merge planning.
 1. `parse`
 - scans supported audio files
 - extracts path fields + tag fields + quality metadata
-- computes normalized fields and version hints
+- computes normalized fields (casefolded) and version hints
 
 2. `compare`
 - builds canonical keys (`artist + album + song`, normalized tag-first, requires all fields)

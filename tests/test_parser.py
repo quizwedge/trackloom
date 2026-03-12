@@ -28,11 +28,11 @@ class NormalizeSongFromStemTests(unittest.TestCase):
 class NormalizeForMatchTests(unittest.TestCase):
     def test_replaces_hyphens_and_underscores_with_spaces(self) -> None:
         value = "The_Best-Song---Ever"
-        self.assertEqual(parser.normalize_for_match(value), "The Best Song Ever")
+        self.assertEqual(parser.normalize_for_match(value), "the best song ever")
 
     def test_cleans_up_whitespace(self) -> None:
         value = "  Song___Name   -  Live "
-        self.assertEqual(parser.normalize_for_match(value), "Song Name Live")
+        self.assertEqual(parser.normalize_for_match(value), "song name live")
 
 
 class ParsePathFieldsTests(unittest.TestCase):
@@ -168,7 +168,7 @@ class CollectAudioMetadataTests(unittest.TestCase):
 
             self.assertEqual(len(results), 1)
             self.assertEqual(results[0].extension, ".mp3")
-            self.assertEqual(results[0].normalized_path_fields.song, "Song One")
+            self.assertEqual(results[0].normalized_path_fields.song, "song one")
 
     def test_collect_raises_for_missing_directory(self) -> None:
         with self.assertRaises(FileNotFoundError):
@@ -207,11 +207,11 @@ class CollectAudioMetadataTests(unittest.TestCase):
             self.assertEqual(len(results), 1)
             item = results[0]
             self.assertEqual(item.path_fields.artist, "Artist_Name")
-            self.assertEqual(item.normalized_path_fields.artist, "Artist Name")
+            self.assertEqual(item.normalized_path_fields.artist, "artist name")
             self.assertEqual(item.path_fields.album, "Best-Hits")
-            self.assertEqual(item.normalized_path_fields.album, "Best Hits")
+            self.assertEqual(item.normalized_path_fields.album, "best hits")
             self.assertEqual(item.path_fields.song, "The_Best-Song")
-            self.assertEqual(item.normalized_path_fields.song, "The Best Song")
+            self.assertEqual(item.normalized_path_fields.song, "the best song")
             self.assertEqual(item.version_hints, [])
 
 

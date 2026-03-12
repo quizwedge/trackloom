@@ -40,7 +40,7 @@ If changing safety behavior, add/update ADR(s) first.
 
 Canonical key:
 
-- `artist + album + song` using normalized tag-first fallback to normalized path fields.
+- `artist + album + song` using normalized (casefolded) tag-first fallback to normalized path fields.
 
 Duplicate policy highlights:
 

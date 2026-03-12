@@ -37,3 +37,12 @@ Use this checklist for versioned releases.
    - `git push origin main`
    - `git push origin vX.Y.Z`
 2. Create GitHub release notes from the tag.
+
+## Release notes template
+
+- Summary:
+  - <one-line overview>
+- Behavior changes:
+  - <matching/plan/apply/safety changes>
+- Compatibility:
+  - <python version changes, config changes>

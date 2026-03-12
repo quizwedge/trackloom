@@ -133,8 +133,8 @@ For each audio file in both directories, step 1 extracts:
 - `tag_fields.artist`
 - `tag_fields.album`
 - `tag_fields.song`
-- `normalized_path_fields.*` (`-` and `_` replaced with spaces; extra whitespace collapsed)
-- `normalized_tag_fields.*` (`-` and `_` replaced with spaces; extra whitespace collapsed)
+- `normalized_path_fields.*` (casefolded; `-` and `_` replaced with spaces; extra whitespace collapsed)
+- `normalized_tag_fields.*` (casefolded; `-` and `_` replaced with spaces; extra whitespace collapsed)
 - `version_hints` (e.g. `live`, `remaster`, `radio_edit`, `acoustic`)
 
 ## Compare Output
@@ -202,6 +202,7 @@ Safety guarantees:
 - no file overwrite: existing destination files are skipped
 - no delete operations are performed
 - plan destinations are deconflicted when possible using `"(from A)"` suffixes
+- plan JSON is validated: actions must be supported and paths must stay under `dir_a`/`dir_b`
 
 Example reviewed workflow:
 

@@ -83,6 +83,7 @@ def normalize_for_match(value: Optional[str]) -> Optional[str]:
     cleaned = _clean(value)
     if cleaned is None:
         return None
+    cleaned = cleaned.casefold()
     cleaned = SEPARATOR_RE.sub(" ", cleaned)
     cleaned = WHITESPACE_RE.sub(" ", cleaned).strip()
     return cleaned or None

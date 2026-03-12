@@ -198,6 +198,26 @@ class CompareCollectionsTests(unittest.TestCase):
         self.assertEqual(result["only_in_b_count"], 1)
         self.assertEqual(result["fuzzy_candidate_count"], 0)
 
+    def test_fuzzy_candidates_are_not_counted_as_only_in(self):
+        a = make_file("A/Album/Believer.wav", "Imagine Dragons", "Evolve", "Believer", 204.0)
+        b = make_file("B/Album/Beliver.mp3", "Imagine Dragon", "Evolve", "Beliver", 205.0)
+
+        result = compare_collections(
+            [a],
+            [b],
+            fuzzy_threshold=0.60,
+            close_duration_seconds=3.0,
+            duration_conflict_seconds=12.0,
+            top_k=5,
+        )
+
+        self.assertEqual(result["fuzzy_candidate_count"], 1)
+        self.assertEqual(result["only_in_a_count"], 0)
+        self.assertEqual(result["only_in_b_count"], 0)
+        self.assertEqual(result["action_counts"]["add_to_b"], 0)
+        self.assertEqual(result["action_counts"]["keep_b"], 0)
+        self.assertEqual(result["action_counts"]["manual_review"], 1)
+
     def test_manual_review_action_count_includes_exact_matches(self):
         a = make_file("A/Album/Song.mp3", "Artist", "Album", "Song", 200.0)
         b = make_file("B/Album/Song.mp3", "Artist", "Album", "Song", 205.0)

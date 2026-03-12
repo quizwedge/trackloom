@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from trackloom.plan_io import load_plan_json, write_plan_json
+from trackloom.plan_io import load_plan_json, write_plan_json, validate_plan_operations
 
 
 class PlanIoTests(unittest.TestCase):
@@ -63,6 +63,54 @@ class PlanIoTests(unittest.TestCase):
             path.write_text(json.dumps(payload), encoding="utf-8")
             with self.assertRaises(ValueError):
                 load_plan_json(path)
+
+    def test_validate_plan_rejects_source_outside_dir_a(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dir_a = root / "a"
+            dir_b = root / "b"
+            dir_a.mkdir()
+            dir_b.mkdir()
+            operation = {
+                "action": "add_to_b",
+                "source_path": str(root / "outside.mp3"),
+                "source_relative_path": "outside.mp3",
+                "destination_path": str(dir_b / "song.mp3"),
+            }
+            with self.assertRaises(ValueError):
+                validate_plan_operations([operation], dir_a, dir_b)
+
+    def test_validate_plan_rejects_destination_outside_dir_b(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dir_a = root / "a"
+            dir_b = root / "b"
+            dir_a.mkdir()
+            dir_b.mkdir()
+            operation = {
+                "action": "add_to_b",
+                "source_path": str(dir_a / "song.mp3"),
+                "source_relative_path": "song.mp3",
+                "destination_path": str(root / "outside.mp3"),
+            }
+            with self.assertRaises(ValueError):
+                validate_plan_operations([operation], dir_a, dir_b)
+
+    def test_validate_plan_rejects_unknown_action(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dir_a = root / "a"
+            dir_b = root / "b"
+            dir_a.mkdir()
+            dir_b.mkdir()
+            operation = {
+                "action": "delete_everything",
+                "source_path": str(dir_a / "song.mp3"),
+                "source_relative_path": "song.mp3",
+                "destination_path": str(dir_b / "song.mp3"),
+            }
+            with self.assertRaises(ValueError):
+                validate_plan_operations([operation], dir_a, dir_b)
 
 
 if __name__ == "__main__":

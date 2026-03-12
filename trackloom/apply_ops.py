@@ -2,7 +2,9 @@
 # Copyright (C) 2026 Dan Getz, Jr.
 from __future__ import annotations
 
+import os
 import shutil
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -28,8 +30,34 @@ def _quarantine_destination(
     try:
         relative = target_path.relative_to(dir_b)
     except ValueError:
-        relative = Path(target_path.name)
+        try:
+            relative = target_path.resolve().relative_to(dir_b.resolve())
+        except ValueError:
+            relative = Path(target_path.name)
     return _unique_path(quarantine_dir / relative)
+
+
+def _paths_equivalent(left: Path, right: Path) -> bool:
+    return left.resolve() == right.resolve()
+
+
+def _copy_with_atomic_replace(source: Path, destination: Path) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=".trackloom_tmp_", suffix=destination.suffix, dir=destination.parent
+    )
+    os.close(fd)
+    tmp_path = Path(tmp_name)
+    try:
+        shutil.copy2(source, tmp_path)
+        os.replace(tmp_path, destination)
+    except Exception:
+        try:
+            if tmp_path.exists():
+                tmp_path.unlink()
+        except Exception:
+            pass
+        raise
 
 
 def execute_operations(
@@ -77,7 +105,9 @@ def execute_operations(
                 continue
 
             will_clear_effective_dst = (
-                should_quarantine and replace_target is not None and effective_dst == replace_target
+                should_quarantine
+                and replace_target is not None
+                and _paths_equivalent(effective_dst, replace_target)
             )
             destination_blocked = effective_dst.exists() and not will_clear_effective_dst
             if destination_blocked:
@@ -120,8 +150,7 @@ def execute_operations(
                 )
                 continue
 
-            effective_dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, effective_dst)
+            _copy_with_atomic_replace(src, effective_dst)
             executed.append(
                 {
                     "operation": operation,

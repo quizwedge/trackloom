@@ -20,3 +20,5 @@
 - [0017: Plex Mode Operation Filtering](0017-plex-mode-operation-filtering.md)
 - [0018: Demo Fixtures Use ffmpeg for Encoded Formats and mutagen for Tagging](0018-demo-fixtures-generation-with-ffmpeg.md)
 - [0019: Exact Matching Requires Complete Canonical Key](0019-exact-match-requires-complete-key.md)
+- [0020: Case-Insensitive Normalized Fields for Matching](0020-case-insensitive-normalized-fields.md)
+- [0021: Plan Validation and Atomic Apply Safety](0021-plan-validation-and-atomic-apply.md)
