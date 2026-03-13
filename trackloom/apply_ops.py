@@ -31,14 +31,14 @@ def _quarantine_destination(
         relative = target_path.relative_to(dir_b)
     except ValueError:
         try:
-            relative = target_path.resolve().relative_to(dir_b.resolve())
+            relative = target_path.resolve(strict=False).relative_to(dir_b.resolve(strict=False))
         except ValueError:
             relative = Path(target_path.name)
     return _unique_path(quarantine_dir / relative)
 
 
 def _paths_equivalent(left: Path, right: Path) -> bool:
-    return left.resolve() == right.resolve()
+    return left.resolve(strict=False) == right.resolve(strict=False)
 
 
 def _copy_with_atomic_replace(source: Path, destination: Path) -> None:

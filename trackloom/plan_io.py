@@ -63,7 +63,7 @@ def load_plan_json(path: Path) -> Dict[str, Any]:
 
 
 def _resolve_path(path: str) -> Path:
-    return Path(path).expanduser().resolve()
+    return Path(path).expanduser().resolve(strict=False)
 
 
 def _ensure_within(root: Path, path: Path, label: str, idx: int) -> None:
