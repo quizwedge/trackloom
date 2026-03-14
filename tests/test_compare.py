@@ -185,7 +185,10 @@ class CompareCollectionsTests(unittest.TestCase):
         )
 
         self.assertEqual(result["fuzzy_candidate_count"], 1)
+        self.assertEqual(result["fuzzy_dropped_count"], 1)
         self.assertEqual(result["action_counts"]["manual_review"], 1)
+        self.assertEqual(result["only_in_a_count"], 0)
+        self.assertEqual(result["only_in_b_count"], 0)
 
     def test_missing_canonical_fields_are_not_exact_matches(self):
         a = make_file("A/Unknown.mp3", None, None, None, 200.0)

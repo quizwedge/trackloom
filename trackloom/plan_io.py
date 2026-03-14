@@ -90,11 +90,25 @@ def validate_plan_operations(operations: List[Operation], dir_a: Path, dir_b: Pa
         _ensure_within(root_b, destination_path, "destination_path", idx)
 
         preferred_destination = op.get("preferred_destination_path")
+        preferred_path = None
         if preferred_destination:
             preferred_path = _resolve_path(str(preferred_destination))
             _ensure_within(root_b, preferred_path, "preferred_destination_path", idx)
 
         replace_target = op.get("replace_target_path")
+        replace_path = None
         if replace_target:
             replace_path = _resolve_path(str(replace_target))
             _ensure_within(root_b, replace_path, "replace_target_path", idx)
+
+        if action == "replace_in_b_with_a":
+            if not preferred_destination or not replace_target:
+                raise ValueError(
+                    "Operation at index "
+                    f"{idx} replace_in_b_with_a requires preferred_destination_path and replace_target_path"
+                )
+            if preferred_path != replace_path:
+                raise ValueError(
+                    "Operation at index "
+                    f"{idx} replace_in_b_with_a requires preferred_destination_path to match replace_target_path"
+                )

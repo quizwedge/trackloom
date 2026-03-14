@@ -81,6 +81,7 @@ def apply_mode_to_plan_payload(
             "only_in_a_count": compare_payload["only_in_a_count"],
             "only_in_b_count": compare_payload["only_in_b_count"],
             "fuzzy_candidate_count": compare_payload["fuzzy_candidate_count"],
+            "fuzzy_dropped_count": compare_payload.get("fuzzy_dropped_count", 0),
             "fuzzy_rejection_count": compare_payload.get("fuzzy_rejection_count", 0),
             "action_counts": compare_payload["action_counts"],
         }

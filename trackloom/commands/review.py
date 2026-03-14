@@ -42,6 +42,12 @@ def cmd_review(args: Namespace) -> int:
     compare_result = compare_payload(files_a, files_b, compare_config)
     candidates = extract_manual_review_candidates(compare_result)
     review_summary = summarize_manual_review_candidates(candidates)
+    if compare_result.get("fuzzy_dropped_count"):
+        print(
+            "Note: "
+            f"{compare_result['fuzzy_dropped_count']} fuzzy candidate(s) were dropped due to --top-k. "
+            "Increase --top-k to review more matches."
+        )
     if args.export_manual_review_json is not None:
         write_plan_json(
             args.export_manual_review_json,

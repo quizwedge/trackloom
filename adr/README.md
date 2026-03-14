@@ -22,3 +22,4 @@
 - [0019: Exact Matching Requires Complete Canonical Key](0019-exact-match-requires-complete-key.md)
 - [0020: Case-Insensitive Normalized Fields for Matching](0020-case-insensitive-normalized-fields.md)
 - [0021: Plan Validation and Atomic Apply Safety](0021-plan-validation-and-atomic-apply.md)
+- [0022: Top-K Fuzzy Candidate Cap Is Display-Only](0022-top-k-fuzzy-candidate-cap.md)

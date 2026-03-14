@@ -44,5 +44,6 @@ Use this checklist for versioned releases.
   - <one-line overview>
 - Behavior changes:
   - <matching/plan/apply/safety changes>
+  - <note: `--top-k` now caps reported fuzzy candidates only; dropped pairs counted in `fuzzy_dropped_count`>
 - Compatibility:
   - <python version changes, config changes>

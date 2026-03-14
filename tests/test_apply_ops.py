@@ -175,6 +175,32 @@ class ApplyOpsTests(unittest.TestCase):
             self.assertEqual(old_b.read_text(), "old")
             self.assertFalse(quarantine.exists())
 
+    def test_replace_without_target_uses_preferred_destination(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dir_b = root / "library_b"
+            src = root / "a" / "song.wav"
+            preferred_dst = dir_b / "Artist" / "Album" / "song.mp3"
+            planned_dst = dir_b / "Artist" / "Album" / "song (from A).wav"
+
+            src.parent.mkdir(parents=True)
+            src.write_text("new")
+
+            operation = {
+                "action": "replace_in_b_with_a",
+                "source_path": str(src),
+                "source_relative_path": "Artist/Album/song.wav",
+                "preferred_destination_path": str(preferred_dst),
+                "destination_path": str(planned_dst),
+                "replace_target_path": str(preferred_dst),
+            }
+            result = execute_operations([operation])
+
+            self.assertEqual(result["executed_count"], 1)
+            self.assertTrue(preferred_dst.exists())
+            self.assertFalse(planned_dst.exists())
+            self.assertEqual(preferred_dst.read_text(), "new")
+
     def test_replace_with_quarantine_allows_symlinked_dir_b(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

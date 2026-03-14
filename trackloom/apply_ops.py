@@ -85,14 +85,21 @@ def execute_operations(
         preferred_dst = Path(preferred_dst_raw) if preferred_dst_raw else dst
         replace_target_raw = operation.get("replace_target_path")
         replace_target = Path(replace_target_raw) if replace_target_raw else None
+        action = operation.get("action")
         quarantine_move = None
         should_quarantine = (
             cleanup_mode == "move-to-quarantine"
-            and operation.get("action") == "replace_in_b_with_a"
+            and action == "replace_in_b_with_a"
             and replace_target is not None
             and replace_target.exists()
         )
-        effective_dst = preferred_dst if should_quarantine else dst
+        if action == "replace_in_b_with_a":
+            if should_quarantine:
+                effective_dst = preferred_dst
+            else:
+                effective_dst = preferred_dst if not preferred_dst.exists() else dst
+        else:
+            effective_dst = dst
 
         try:
             if not src.exists():

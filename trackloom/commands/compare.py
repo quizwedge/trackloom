@@ -53,6 +53,8 @@ def cmd_compare(args: Namespace) -> int:
                 f"A={candidate['file_a']['relative_path']} "
                 f"<-> B={candidate['file_b']['relative_path']}"
             )
+    if payload.get("fuzzy_dropped_count"):
+        print(f"Fuzzy candidates dropped due to --top-k: {payload['fuzzy_dropped_count']}")
     if payload.get("fuzzy_rejection_count"):
         print(f"Fuzzy rejections logged: {payload['fuzzy_rejection_count']}")
     return 0

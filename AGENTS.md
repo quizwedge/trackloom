@@ -58,6 +58,10 @@ Action labels:
 - `keep_both_versions`
 - `manual_review`
 
+Fuzzy candidate cap:
+
+- `--top-k` caps reported fuzzy candidates only; fuzzy-eligible pairs beyond the cap are excluded from `only_in_*` and counted as `fuzzy_dropped_count`.
+
 Mode policy:
 
 - `standard`: no mode-based operation filtering

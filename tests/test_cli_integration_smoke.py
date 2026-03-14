@@ -70,6 +70,8 @@ class CliIntegrationSmokeTests(unittest.TestCase):
                     ".m4a",
                     ".flac",
                     ".m4p",
+                    "--top-k",
+                    "1",
                     "--json",
                 ],
                 cwd=repo_root,
@@ -77,6 +79,7 @@ class CliIntegrationSmokeTests(unittest.TestCase):
             compare_payload = json.loads(compare.stdout)
             self.assertIn("exact_match_count", compare_payload)
             self.assertIn("action_counts", compare_payload)
+            self.assertIn("fuzzy_dropped_count", compare_payload)
 
             plan = _run_cli(
                 [

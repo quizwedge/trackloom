@@ -112,6 +112,40 @@ class PlanIoTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 validate_plan_operations([operation], dir_a, dir_b)
 
+    def test_validate_plan_replace_requires_preferred_and_replace_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dir_a = root / "a"
+            dir_b = root / "b"
+            dir_a.mkdir()
+            dir_b.mkdir()
+            operation = {
+                "action": "replace_in_b_with_a",
+                "source_path": str(dir_a / "song.wav"),
+                "source_relative_path": "song.wav",
+                "destination_path": str(dir_b / "song (from A).wav"),
+            }
+            with self.assertRaises(ValueError):
+                validate_plan_operations([operation], dir_a, dir_b)
+
+    def test_validate_plan_replace_requires_matching_preferred_and_replace_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dir_a = root / "a"
+            dir_b = root / "b"
+            dir_a.mkdir()
+            dir_b.mkdir()
+            operation = {
+                "action": "replace_in_b_with_a",
+                "source_path": str(dir_a / "song.wav"),
+                "source_relative_path": "song.wav",
+                "destination_path": str(dir_b / "song (from A).wav"),
+                "preferred_destination_path": str(dir_b / "song.mp3"),
+                "replace_target_path": str(dir_b / "other.mp3"),
+            }
+            with self.assertRaises(ValueError):
+                validate_plan_operations([operation], dir_a, dir_b)
+
 
 if __name__ == "__main__":
     unittest.main()

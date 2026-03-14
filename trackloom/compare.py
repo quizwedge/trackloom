@@ -274,7 +274,7 @@ def compare_collections(
             extras = b_items[paired:]
             unmatched_b.extend(extras)
 
-    fuzzy_candidates: List[FuzzyCandidate] = []
+    fuzzy_candidates_all: List[FuzzyCandidate] = []
     fuzzy_rejections = []
     for item_a in unmatched_a:
         song_a = _choose_field(
@@ -332,7 +332,7 @@ def compare_collections(
                 )
                 # Fuzzy matches should be reviewed unless confidence rules are extended.
                 recommended_action = "manual_review"
-                fuzzy_candidates.append(
+                fuzzy_candidates_all.append(
                     FuzzyCandidate(
                         score=score,
                         song_similarity=song_sim,
@@ -346,14 +346,15 @@ def compare_collections(
                     )
                 )
 
-    fuzzy_candidates.sort(key=lambda c: c.score, reverse=True)
+    fuzzy_candidates_all.sort(key=lambda c: c.score, reverse=True)
     if top_k > 0:
-        fuzzy_candidates = fuzzy_candidates[:top_k]
+        fuzzy_candidates = fuzzy_candidates_all[:top_k]
     else:
         fuzzy_candidates = []
+    fuzzy_dropped_count = max(0, len(fuzzy_candidates_all) - len(fuzzy_candidates))
 
-    fuzzy_a_ids = {candidate.file_a.absolute_path for candidate in fuzzy_candidates}
-    fuzzy_b_ids = {candidate.file_b.absolute_path for candidate in fuzzy_candidates}
+    fuzzy_a_ids = {candidate.file_a.absolute_path for candidate in fuzzy_candidates_all}
+    fuzzy_b_ids = {candidate.file_b.absolute_path for candidate in fuzzy_candidates_all}
 
     for item in unmatched_a:
         if item.absolute_path in fuzzy_a_ids:
@@ -387,6 +388,7 @@ def compare_collections(
         "only_in_a_count": len(only_in_a),
         "only_in_b_count": len(only_in_b),
         "fuzzy_candidate_count": len(fuzzy_candidates),
+        "fuzzy_dropped_count": fuzzy_dropped_count,
         "fuzzy_rejection_count": len(fuzzy_rejections),
         "duplicate_policy_counts": duplicate_policy_counts,
         "action_counts": action_counts,

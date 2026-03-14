@@ -104,7 +104,7 @@ Optional flags:
 - `--duration-conflict-seconds` (default `5.0`)
 - `--min-song-sim` (default `0.82`)
 - `--min-artist-sim` (default `0.65`)
-- `--top-k` (default `20`)
+- `--top-k` (default `20`, caps reported fuzzy candidates; dropped fuzzy-eligible pairs are excluded from `only_in_*` and counted in `fuzzy_dropped_count`)
 
 `plan` uses the same fuzzy/duration tuning flags as `compare`.
 `apply` uses the same fuzzy/duration tuning flags as `compare`.
@@ -137,6 +137,9 @@ For each audio file in both directories, step 1 extracts:
 - `normalized_tag_fields.*` (casefolded; `-` and `_` replaced with spaces; extra whitespace collapsed)
 - `version_hints` (e.g. `live`, `remaster`, `radio_edit`, `acoustic`)
 
+Path parsing assumes `artist/album/track.ext`. Two-level paths are treated as
+`album/track.ext` (artist unknown).
+
 ## Compare Output
 
 `compare` reports:
@@ -145,6 +148,8 @@ For each audio file in both directories, step 1 extracts:
 - tracks only in A
 - tracks only in B
 - fuzzy candidates scored from song similarity, artist similarity, and duration similarity
+- fuzzy candidates are capped by `--top-k`; additional fuzzy-eligible pairs are counted
+  as `fuzzy_dropped_count` and excluded from `only_in_*` results
 - fuzzy rejections with score breakdown and rejection reasons (for threshold tuning)
 - duplicate policy classification for matched pairs:
   - `likely_duplicate`

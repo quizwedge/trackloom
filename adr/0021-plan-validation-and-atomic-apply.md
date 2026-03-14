@@ -14,12 +14,16 @@ Before apply execution, validate plan operations:
 - allowlist actions to `add_to_b`, `replace_in_b_with_a`, `keep_both_versions`
 - require `source_path` to reside under `dir_a` and destination/preferred/replace paths
   to reside under `dir_b` (using resolved paths)
+- for `replace_in_b_with_a`, require `preferred_destination_path` and
+  `replace_target_path`, and they must resolve to the same path
 
 During apply execution:
 - copy to a temporary file in the destination directory and `os.replace` atomically
 - clean up temp files on failure
 - resolve paths when deriving quarantine destinations so symlinked `dir_b` preserves
   relative structure
+- when a replace target no longer exists, prefer writing to
+  `preferred_destination_path` if it is free
 
 ## Consequences
 - Malformed or malicious plan JSON is rejected before any file operations occur.
