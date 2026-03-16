@@ -499,9 +499,7 @@ def compare_collections(
                 )
 
     fuzzy_candidates_all.sort(key=lambda c: c.score, reverse=True)
-    fuzzy_candidates = (
-        fuzzy_candidates_all[:top_k] if top_k > 0 else []
-    )
+    fuzzy_candidates = fuzzy_candidates_all[:top_k] if top_k > 0 else []
     fuzzy_dropped_count = max(0, len(fuzzy_candidates_all) - len(fuzzy_candidates))
 
     fuzzy_a_ids = {candidate.file_a.absolute_path for candidate in fuzzy_candidates_all}
