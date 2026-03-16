@@ -59,13 +59,21 @@ class ReviewTests(unittest.TestCase):
     def test_build_plan_from_review_decisions(self):
         candidates = [
             {
-                "id": _candidate_id("exact", _file_record("/tmp/a/song.wav", "Artist/Album/song.wav"), _file_record("/tmp/b/song.mp3", "Artist/Album/song.mp3")),
+                "id": _candidate_id(
+                    "exact",
+                    _file_record("/tmp/a/song.wav", "Artist/Album/song.wav"),
+                    _file_record("/tmp/b/song.mp3", "Artist/Album/song.mp3"),
+                ),
                 "source": "exact",
                 "file_a": _file_record("/tmp/a/song.wav", "Artist/Album/song.wav"),
                 "file_b": _file_record("/tmp/b/song.mp3", "Artist/Album/song.mp3"),
             },
             {
-                "id": _candidate_id("fuzzy", _file_record("/tmp/a/song2.mp3", "Artist/Album/song2.mp3"), _file_record("/tmp/b/song2.mp3", "Artist/Album/song2.mp3")),
+                "id": _candidate_id(
+                    "fuzzy",
+                    _file_record("/tmp/a/song2.mp3", "Artist/Album/song2.mp3"),
+                    _file_record("/tmp/b/song2.mp3", "Artist/Album/song2.mp3"),
+                ),
                 "source": "fuzzy",
                 "file_a": _file_record("/tmp/a/song2.mp3", "Artist/Album/song2.mp3"),
                 "file_b": _file_record("/tmp/b/song2.mp3", "Artist/Album/song2.mp3"),
@@ -94,9 +102,18 @@ class ReviewTests(unittest.TestCase):
 
     def test_summarize_manual_review_candidates(self):
         candidates = [
-            {"source": "exact", "duplicate_policy": {"classification": "duration_conflict"}},
-            {"source": "fuzzy", "duplicate_policy": {"classification": "duration_conflict"}},
-            {"source": "fuzzy", "duplicate_policy": {"classification": "version_conflict"}},
+            {
+                "source": "exact",
+                "duplicate_policy": {"classification": "duration_conflict"},
+            },
+            {
+                "source": "fuzzy",
+                "duplicate_policy": {"classification": "duration_conflict"},
+            },
+            {
+                "source": "fuzzy",
+                "duplicate_policy": {"classification": "version_conflict"},
+            },
         ]
         summary = summarize_manual_review_candidates(candidates)
         self.assertEqual(summary["total_manual_review_items"], 3)

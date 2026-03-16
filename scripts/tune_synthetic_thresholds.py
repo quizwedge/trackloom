@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 from trackloom.compare import compare_collections
 from trackloom.parser import ParsedAudioFile, ParsedFields
@@ -37,14 +36,19 @@ def make_file(
     )
 
 
-def _has_candidate_with_paths(result: Dict, a_path: str, b_path: str) -> bool:
+def _has_candidate_with_paths(result: dict, a_path: str, b_path: str) -> bool:
     for c in result.get("fuzzy_candidates", []):
-        if c["file_a"]["relative_path"] == a_path and c["file_b"]["relative_path"] == b_path:
+        if (
+            c["file_a"]["relative_path"] == a_path
+            and c["file_b"]["relative_path"] == b_path
+        ):
             return True
     return False
 
 
-def _has_rejection_reason_for_paths(result: Dict, a_path: str, b_path: str, reason: str) -> bool:
+def _has_rejection_reason_for_paths(
+    result: dict, a_path: str, b_path: str, reason: str
+) -> bool:
     for r in result.get("fuzzy_rejections", []):
         if (
             r.get("file_a_relative_path") == a_path
@@ -61,7 +65,7 @@ def evaluate_config(
     min_artist_similarity: float,
     close_duration_seconds: float = 1.0,
     duration_conflict_seconds: float = 5.0,
-) -> Tuple[int, int, Dict]:
+) -> tuple[int, int, dict]:
     # Positive fuzzy candidate (should pass and become manual_review).
     pos_a = make_file(
         "A/Album/Believer.wav",
@@ -81,12 +85,18 @@ def evaluate_config(
     )
 
     # Negative candidate: similar text but duration conflict should reject.
-    neg_a = make_file("A/Album/Natural.mp3", "Imagine Dragons", "Evolve", "Natural", 180.0)
+    neg_a = make_file(
+        "A/Album/Natural.mp3", "Imagine Dragons", "Evolve", "Natural", 180.0
+    )
     neg_b = make_file("B/Album/Naturl.mp3", "Imagine Dragon", "Evolve", "Naturl", 186.0)
 
     # Negative candidate: artist mismatch should reject.
-    artist_a = make_file("A/Album/Thunder.mp3", "Imagine Dragons", "Evolve", "Thunder", 187.0)
-    artist_b = make_file("B/Album/Thunder.mp3", "Totally Different", "Evolve", "Thunder", 187.2)
+    artist_a = make_file(
+        "A/Album/Thunder.mp3", "Imagine Dragons", "Evolve", "Thunder", 187.0
+    )
+    artist_b = make_file(
+        "B/Album/Thunder.mp3", "Totally Different", "Evolve", "Thunder", 187.2
+    )
 
     result = compare_collections(
         [pos_a, neg_a, artist_a],
@@ -106,7 +116,10 @@ def evaluate_config(
             result, neg_a.relative_path, neg_b.relative_path, "duration_conflict"
         ),
         _has_rejection_reason_for_paths(
-            result, artist_a.relative_path, artist_b.relative_path, "artist_similarity_below_min"
+            result,
+            artist_a.relative_path,
+            artist_b.relative_path,
+            "artist_similarity_below_min",
         ),
     ]
     passed = sum(1 for x in checks if x)
@@ -118,7 +131,7 @@ def main() -> int:
     min_song_sims = [0.60, 0.70, 0.75, 0.80, 0.82]
     min_artist_sims = [0.55, 0.60, 0.65, 0.70]
 
-    ranked: List[Tuple[int, int, float, float, float, Dict]] = []
+    ranked: list[tuple[int, int, float, float, float, dict]] = []
     for ft in fuzzy_thresholds:
         for ms in min_song_sims:
             for ma in min_artist_sims:
@@ -138,7 +151,8 @@ def main() -> int:
         print(
             f"- pass={passed}/{total} "
             f"fuzzy_threshold={ft:.2f} min_song_sim={ms:.2f} min_artist_sim={ma:.2f} "
-            f"(candidates={result['fuzzy_candidate_count']} rejections={result['fuzzy_rejection_count']})"
+            f"(candidates={result['fuzzy_candidate_count']} "
+            f"rejections={result['fuzzy_rejection_count']})"
         )
 
     default = evaluate_config(

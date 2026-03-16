@@ -13,7 +13,9 @@ def cmd_compare(args: Namespace) -> int:
     compare_config = CompareConfig.from_args(args)
     compare_config.validate()
     extensions = normalize_extensions(args.extensions)
-    files_a, files_b = collect_audio_pair(args.dir_a, args.dir_b, extensions, args.progress)
+    files_a, files_b = collect_audio_pair(
+        args.dir_a, args.dir_b, extensions, args.progress
+    )
     payload = compare_payload(files_a, files_b, compare_config)
     payload["dir_a"] = str(args.dir_a)
     payload["dir_b"] = str(args.dir_b)
@@ -32,7 +34,8 @@ def cmd_compare(args: Namespace) -> int:
     policy_counts = payload.get("duplicate_policy_counts", {})
     if policy_counts:
         print(
-            f"Duplicate policy (exact matches): likely_duplicate={policy_counts.get('likely_duplicate', 0)} | "
+            "Duplicate policy (exact matches): "
+            f"likely_duplicate={policy_counts.get('likely_duplicate', 0)} | "
             f"version_conflict={policy_counts.get('version_conflict', 0)} | "
             f"duration_conflict={policy_counts.get('duration_conflict', 0)}"
         )
@@ -54,7 +57,9 @@ def cmd_compare(args: Namespace) -> int:
                 f"<-> B={candidate['file_b']['relative_path']}"
             )
     if payload.get("fuzzy_dropped_count"):
-        print(f"Fuzzy candidates dropped due to --top-k: {payload['fuzzy_dropped_count']}")
+        print(
+            f"Fuzzy candidates dropped due to --top-k: {payload['fuzzy_dropped_count']}"
+        )
     if payload.get("fuzzy_rejection_count"):
         print(f"Fuzzy rejections logged: {payload['fuzzy_rejection_count']}")
     return 0

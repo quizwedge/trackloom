@@ -33,7 +33,9 @@ def cmd_parse(args: Namespace) -> int:
         "count_a": len(left),
         "count_b": len(right) if args.dir_b is not None else None,
         "files_a": [item.to_dict() for item in left],
-        "files_b": [item.to_dict() for item in right] if args.dir_b is not None else None,
+        "files_b": [item.to_dict() for item in right]
+        if args.dir_b is not None
+        else None,
     }
 
     if args.json:

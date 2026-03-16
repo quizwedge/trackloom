@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Any
 
 MODE_STANDARD = "standard"
 MODE_PLEX = "plex"
@@ -25,7 +24,7 @@ PLEX_ALLOWED_EXTENSIONS = {
 PLEX_BLOCKED_EXTENSIONS = {".m4p", ".aa", ".aax"}
 
 
-def _detect_extension(operation: Dict[str, Any]) -> str:
+def _detect_extension(operation: dict[str, Any]) -> str:
     ext = operation.get("source_extension")
     if isinstance(ext, str) and ext:
         return ext.lower()
@@ -33,7 +32,7 @@ def _detect_extension(operation: Dict[str, Any]) -> str:
     return Path(str(src)).suffix.lower()
 
 
-def assess_plex_compatibility(operation: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
+def assess_plex_compatibility(operation: dict[str, Any]) -> tuple[bool, str | None]:
     ext = _detect_extension(operation)
     if ext in PLEX_BLOCKED_EXTENSIONS:
         return False, "drm_or_protected_extension"
@@ -50,15 +49,15 @@ def assess_plex_compatibility(operation: Dict[str, Any]) -> Tuple[bool, Optional
 
 
 def filter_operations_for_mode(
-    operations: List[Dict[str, Any]], mode: str
-) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    operations: list[dict[str, Any]], mode: str
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     if mode == MODE_STANDARD:
         return operations, []
     if mode != MODE_PLEX:
         raise ValueError("Unsupported mode: " + mode)
 
-    kept: List[Dict[str, Any]] = []
-    skipped: List[Dict[str, Any]] = []
+    kept: list[dict[str, Any]] = []
+    skipped: list[dict[str, Any]] = []
     for op in operations:
         ok, reason = assess_plex_compatibility(op)
         if ok:
@@ -66,4 +65,3 @@ def filter_operations_for_mode(
         else:
             skipped.append({"operation": op, "reason": reason})
     return kept, skipped
-

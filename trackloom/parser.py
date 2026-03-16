@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import os
 import re
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Callable, Optional, Set
+from typing import Any, Callable
 
 try:
     from mutagen import File as MutagenFile
@@ -30,9 +30,9 @@ REMASTER_YEAR_BEFORE_RE = re.compile(r"(\d{4})[^\w]{0,3}remaster(?:ed)?", re.IGN
 
 @dataclass
 class ParsedFields:
-    artist: Optional[str]
-    album: Optional[str]
-    song: Optional[str]
+    artist: str | None
+    album: str | None
+    song: str | None
 
 
 @dataclass
@@ -41,12 +41,12 @@ class ParsedAudioFile:
     absolute_path: str
     relative_path: str
     extension: str
-    duration_seconds: Optional[float]
-    bitrate_kbps: Optional[int]
-    sample_rate_hz: Optional[int]
-    bit_depth: Optional[int]
-    channels: Optional[int]
-    codec: Optional[str]
+    duration_seconds: float | None
+    bitrate_kbps: int | None
+    sample_rate_hz: int | None
+    bit_depth: int | None
+    channels: int | None
+    codec: str | None
     path_fields: ParsedFields
     tag_fields: ParsedFields
     normalized_path_fields: ParsedFields
@@ -58,7 +58,7 @@ class ParsedAudioFile:
         return data
 
 
-def _clean(value: Any) -> Optional[str]:
+def _clean(value: Any) -> str | None:
     if value is None:
         return None
     if isinstance(value, (list, tuple)):
@@ -69,7 +69,7 @@ def _clean(value: Any) -> Optional[str]:
     return text or None
 
 
-def normalize_song_from_stem(stem: str) -> Optional[str]:
+def normalize_song_from_stem(stem: str) -> str | None:
     value = _clean(stem)
     if value is None:
         return None
@@ -81,7 +81,7 @@ def normalize_song_from_stem(stem: str) -> Optional[str]:
     return _clean(value)
 
 
-def normalize_for_match(value: Optional[str]) -> Optional[str]:
+def normalize_for_match(value: str | None) -> str | None:
     cleaned = _clean(value)
     if cleaned is None:
         return None
@@ -158,12 +158,12 @@ def _parse_fields_from_audio(audio: Any) -> ParsedFields:
     return ParsedFields(_clean(artist), _clean(album), _clean(song))
 
 
-def parse_duration_seconds(file_path: Path) -> Optional[float]:
+def parse_duration_seconds(file_path: Path) -> float | None:
     audio = _load_audio(file_path)
     return _parse_duration_from_audio(audio)
 
 
-def _parse_duration_from_audio(audio: Any) -> Optional[float]:
+def _parse_duration_from_audio(audio: Any) -> float | None:
     if audio is None:
         return None
     info = getattr(audio, "info", None)
@@ -178,12 +178,12 @@ def _parse_duration_from_audio(audio: Any) -> Optional[float]:
         return None
 
 
-def parse_audio_quality(file_path: Path) -> dict[str, Optional[Any]]:
+def parse_audio_quality(file_path: Path) -> dict[str, Any | None]:
     audio = _load_audio(file_path)
     return _parse_quality_from_audio(audio)
 
 
-def _to_int(value: Any) -> Optional[int]:
+def _to_int(value: Any) -> int | None:
     if value is None:
         return None
     try:
@@ -192,7 +192,7 @@ def _to_int(value: Any) -> Optional[int]:
         return None
 
 
-def _parse_quality_from_audio(audio: Any) -> dict[str, Optional[Any]]:
+def _parse_quality_from_audio(audio: Any) -> dict[str, Any | None]:
     if audio is None:
         return {
             "bitrate_kbps": None,
@@ -234,7 +234,7 @@ def _parse_quality_from_audio(audio: Any) -> dict[str, Optional[Any]]:
 
 
 def classify_version_hints(
-    song_from_path: Optional[str], song_from_tag: Optional[str]
+    song_from_path: str | None, song_from_tag: str | None
 ) -> list[str]:
     text_parts = [part for part in [song_from_tag, song_from_path] if part]
     if not text_parts:
@@ -280,15 +280,15 @@ def classify_version_hints(
     return ordered
 
 
-def is_audio_file(path: Path, extensions: Optional[Set[str]] = None) -> bool:
+def is_audio_file(path: Path, extensions: set[str] | None = None) -> bool:
     allowed = extensions if extensions is not None else SUPPORTED_EXTENSIONS
     return path.is_file() and path.suffix.lower() in allowed
 
 
 def collect_audio_metadata(
     root_dir: Path,
-    extensions: Optional[Set[str]] = None,
-    progress_callback: Optional[Callable[[int, int, Path], None]] = None,
+    extensions: set[str] | None = None,
+    progress_callback: Callable[[int, int, Path], None] | None = None,
 ) -> list[ParsedAudioFile]:
     if not root_dir.exists():
         raise FileNotFoundError(f"Directory does not exist: {root_dir}")

@@ -38,14 +38,17 @@ def cmd_review(args: Namespace) -> int:
         raise ValueError("--start-index must be >= 1")
 
     extensions = normalize_extensions(args.extensions)
-    files_a, files_b = collect_audio_pair(args.dir_a, args.dir_b, extensions, args.progress)
+    files_a, files_b = collect_audio_pair(
+        args.dir_a, args.dir_b, extensions, args.progress
+    )
     compare_result = compare_payload(files_a, files_b, compare_config)
     candidates = extract_manual_review_candidates(compare_result)
     review_summary = summarize_manual_review_candidates(candidates)
     if compare_result.get("fuzzy_dropped_count"):
         print(
             "Note: "
-            f"{compare_result['fuzzy_dropped_count']} fuzzy candidate(s) were dropped due to --top-k. "
+            f"{compare_result['fuzzy_dropped_count']} fuzzy candidate(s) "
+            "were dropped due to --top-k. "
             "Increase --top-k to review more matches."
         )
     if args.export_manual_review_json is not None:
@@ -67,7 +70,9 @@ def cmd_review(args: Namespace) -> int:
             "manual_review_count": len(candidates),
             "max_manual_items": args.max_manual_items,
             "message": str(err),
-            "hint": "Rerun with --max-manual-items 0 for no cap, or choose a larger value.",
+            "hint": (
+                "Rerun with --max-manual-items 0 for no cap, or choose a larger value."
+            ),
             "summary": review_summary,
         }
         if args.json:
@@ -117,8 +122,13 @@ def cmd_review(args: Namespace) -> int:
             f"{k}={v}" for k, v in sorted(review_summary["policy_counts"].items())
         )
         print(f"Policy summary: {policies}")
-    print("Choices: [a] add_to_b, [r] replace_in_b_with_a, [k] keep_b, [b] keep_both_versions, [s] skip")
-    print("Navigation: n=next page, p=previous page, done=finish, q=quit without saving")
+    print(
+        "Choices: [a] add_to_b, [r] replace_in_b_with_a, [k] keep_b, "
+        "[b] keep_both_versions, [s] skip"
+    )
+    print(
+        "Navigation: n=next page, p=previous page, done=finish, q=quit without saving"
+    )
     print("Set action with: <index> <choice> (example: 3 r)")
 
     key_to_action = {
@@ -132,7 +142,10 @@ def cmd_review(args: Namespace) -> int:
     if args.decisions_file is not None:
         decisions = load_decisions(args.decisions_file)
         if decisions:
-            print(f"Loaded {len(decisions)} existing decision(s) from {args.decisions_file}")
+            print(
+                "Loaded "
+                f"{len(decisions)} existing decision(s) from {args.decisions_file}"
+            )
     page_size = args.page_size
     start_index = min(args.start_index, len(candidates))
     page = (start_index - 1) // page_size
@@ -141,7 +154,10 @@ def cmd_review(args: Namespace) -> int:
     while True:
         start = page * page_size
         end = min(start + page_size, len(candidates))
-        print(f"\nPage {page + 1}/{total_pages} items {start + 1}-{end} of {len(candidates)}")
+        print(
+            f"\nPage {page + 1}/{total_pages} "
+            f"items {start + 1}-{end} of {len(candidates)}"
+        )
         for index in range(start, end):
             candidate = candidates[index]
             file_a = candidate.get("file_a") or {}
@@ -149,7 +165,9 @@ def cmd_review(args: Namespace) -> int:
             a_rel = file_a.get("relative_path", "<unknown>")
             b_rel = file_b.get("relative_path", "<unknown>")
             chosen = decisions.get(candidate["id"], "skip")
-            summary = f"{index + 1}. [{chosen}] {candidate['source']} A={a_rel} <-> B={b_rel}"
+            summary = (
+                f"{index + 1}. [{chosen}] {candidate['source']} A={a_rel} <-> B={b_rel}"
+            )
             if candidate["source"] == "fuzzy":
                 summary += (
                     f" | score={candidate.get('score', 0):.3f}"
@@ -195,7 +213,9 @@ def cmd_review(args: Namespace) -> int:
         print("Unknown command. Use n, p, done, q, or '<index> <choice>'")
 
     plan_payload = build_plan_from_review_decisions(candidates, decisions, args.dir_b)
-    plan_payload = apply_mode_to_plan_payload(plan_payload, args.mode, args.dir_a, args.dir_b)
+    plan_payload = apply_mode_to_plan_payload(
+        plan_payload, args.mode, args.dir_a, args.dir_b
+    )
     plan_payload["manual_review_count"] = len(candidates)
     plan_payload["summary"] = review_summary
     plan_payload["schema_version"] = PLAN_SCHEMA_VERSION
@@ -228,7 +248,8 @@ def cmd_review(args: Namespace) -> int:
     )
     if plan_payload.get("mode_skipped_count"):
         print(
-            f"Mode skipped operations ({args.mode}): {plan_payload['mode_skipped_count']}"
+            "Mode skipped operations "
+            f"({args.mode}): {plan_payload['mode_skipped_count']}"
         )
     if args.write_plan_json is not None:
         print(f"Reviewed plan saved to: {args.write_plan_json}")

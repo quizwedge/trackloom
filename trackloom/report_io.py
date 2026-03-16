@@ -5,23 +5,23 @@ from __future__ import annotations
 import csv
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from .models import ExecuteResult
 
 
-def write_report_json(path: Path, payload: Dict[str, Any]) -> None:
+def write_report_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as fh:
         json.dump(payload, fh, indent=2)
         fh.write("\n")
 
 
-def write_report_csv(path: Path, payload: Dict[str, Any]) -> None:
+def write_report_csv(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     result: ExecuteResult = payload.get("result", {})
-    executed: List[Dict[str, Any]] = result.get("executed", [])
-    skipped: List[Dict[str, Any]] = result.get("skipped", [])
+    executed: list[dict[str, Any]] = result.get("executed", [])
+    skipped: list[dict[str, Any]] = result.get("skipped", [])
 
     fieldnames = [
         "status",
@@ -41,6 +41,7 @@ def write_report_csv(path: Path, payload: Dict[str, Any]) -> None:
 
         for item in executed:
             op = item.get("operation", {})
+            quarantine_move = item.get("quarantine_move") or {}
             writer.writerow(
                 {
                     "status": item.get("status", ""),
@@ -49,14 +50,17 @@ def write_report_csv(path: Path, payload: Dict[str, Any]) -> None:
                     "source_path": op.get("source_path", ""),
                     "source_relative_path": op.get("source_relative_path", ""),
                     "destination_path": op.get("destination_path", ""),
-                    "effective_destination_path": item.get("effective_destination_path", ""),
-                    "quarantine_from": (item.get("quarantine_move") or {}).get("from", ""),
-                    "quarantine_to": (item.get("quarantine_move") or {}).get("to", ""),
-                    "quarantine_status": (item.get("quarantine_move") or {}).get("status", ""),
+                    "effective_destination_path": item.get(
+                        "effective_destination_path", ""
+                    ),
+                    "quarantine_from": quarantine_move.get("from", ""),
+                    "quarantine_to": quarantine_move.get("to", ""),
+                    "quarantine_status": quarantine_move.get("status", ""),
                 }
             )
         for item in skipped:
             op = item.get("operation", {})
+            quarantine_move = item.get("quarantine_move") or {}
             writer.writerow(
                 {
                     "status": "skipped",
@@ -65,9 +69,11 @@ def write_report_csv(path: Path, payload: Dict[str, Any]) -> None:
                     "source_path": op.get("source_path", ""),
                     "source_relative_path": op.get("source_relative_path", ""),
                     "destination_path": op.get("destination_path", ""),
-                    "effective_destination_path": item.get("effective_destination_path", ""),
-                    "quarantine_from": (item.get("quarantine_move") or {}).get("from", ""),
-                    "quarantine_to": (item.get("quarantine_move") or {}).get("to", ""),
-                    "quarantine_status": (item.get("quarantine_move") or {}).get("status", ""),
+                    "effective_destination_path": item.get(
+                        "effective_destination_path", ""
+                    ),
+                    "quarantine_from": quarantine_move.get("from", ""),
+                    "quarantine_to": quarantine_move.get("to", ""),
+                    "quarantine_status": quarantine_move.get("status", ""),
                 }
             )

@@ -149,7 +149,12 @@ class CliIntegrationSmokeTests(unittest.TestCase):
                         "replace_target_path": None,
                     }
                 ],
-                "counts": {"operations": 1, "add_to_b": 1, "replace_in_b_with_a": 0, "keep_both_versions": 0},
+                "counts": {
+                    "operations": 1,
+                    "add_to_b": 1,
+                    "replace_in_b_with_a": 0,
+                    "keep_both_versions": 0,
+                },
             }
             plan_path.write_text(json.dumps(plan_payload), encoding="utf-8")
 

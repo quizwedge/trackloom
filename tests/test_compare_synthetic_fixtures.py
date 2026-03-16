@@ -41,8 +41,12 @@ def make_file(
 
 class SyntheticFixtureSuiteTests(unittest.TestCase):
     def test_exact_duration_boundary_behaviors(self):
-        close_a = make_file("A/Artist/Album/Close.mp3", "Artist", "Album", "Close", 200.0)
-        close_b = make_file("B/Artist/Album/Close.mp3", "Artist", "Album", "Close", 200.9)
+        close_a = make_file(
+            "A/Artist/Album/Close.mp3", "Artist", "Album", "Close", 200.0
+        )
+        close_b = make_file(
+            "B/Artist/Album/Close.mp3", "Artist", "Album", "Close", 200.9
+        )
         conflict_a = make_file(
             "A/Artist/Album/Conflict.mp3", "Artist", "Album", "Conflict", 210.0
         )
@@ -53,15 +57,13 @@ class SyntheticFixtureSuiteTests(unittest.TestCase):
         result = compare_collections([close_a, conflict_a], [close_b, conflict_b])
         self.assertEqual(result["exact_match_count"], 2)
 
-        by_song = {
-            item["key"]["song"]: item
-            for item in result["exact_matches"]
-        }
+        by_song = {item["key"]["song"]: item for item in result["exact_matches"]}
         self.assertEqual(
             by_song["Close"]["duplicate_policy"]["classification"], "likely_duplicate"
         )
         self.assertEqual(
-            by_song["Conflict"]["duplicate_policy"]["classification"], "duration_conflict"
+            by_song["Conflict"]["duplicate_policy"]["classification"],
+            "duration_conflict",
         )
         self.assertEqual(by_song["Conflict"]["recommended_action"], "manual_review")
 
@@ -104,20 +106,21 @@ class SyntheticFixtureSuiteTests(unittest.TestCase):
         by_song = {item["key"]["song"]: item for item in result["exact_matches"]}
 
         self.assertEqual(
-            by_song["Versioned Song"]["duplicate_policy"]["classification"], "version_conflict"
+            by_song["Versioned Song"]["duplicate_policy"]["classification"],
+            "version_conflict",
         )
         self.assertEqual(
             by_song["Versioned Song"]["recommended_action"], "keep_both_versions"
         )
 
-        self.assertEqual(
-            by_song["Quality"]["duplicate_policy"]["preferred_side"], "a"
-        )
+        self.assertEqual(by_song["Quality"]["duplicate_policy"]["preferred_side"], "a")
         self.assertIn(
             "lossless_vs_lossy_hard_boundary",
             by_song["Quality"]["duplicate_policy"]["reasons"],
         )
-        self.assertEqual(by_song["Quality"]["recommended_action"], "replace_in_b_with_a")
+        self.assertEqual(
+            by_song["Quality"]["recommended_action"], "replace_in_b_with_a"
+        )
 
     def test_fuzzy_typo_candidate_and_duration_rejection(self):
         # Candidate should pass fuzzy text match but still require manual review.
@@ -164,9 +167,7 @@ class SyntheticFixtureSuiteTests(unittest.TestCase):
 
         self.assertGreaterEqual(result["fuzzy_rejection_count"], 1)
         reasons = {
-            reason
-            for item in result["fuzzy_rejections"]
-            for reason in item["reasons"]
+            reason for item in result["fuzzy_rejections"] for reason in item["reasons"]
         }
         self.assertIn("duration_conflict", reasons)
 

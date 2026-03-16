@@ -56,7 +56,9 @@ class CompareCollectionsTests(unittest.TestCase):
             codec=None,
             path_fields=ParsedFields("Path Artist", "Path Album", "Path Song"),
             tag_fields=ParsedFields("Tag Artist", "Tag Album", "Tag Song"),
-            normalized_path_fields=ParsedFields("path artist", "path album", "path song"),
+            normalized_path_fields=ParsedFields(
+                "path artist", "path album", "path song"
+            ),
             normalized_tag_fields=ParsedFields("tag artist", "tag album", "tag song"),
             version_hints=[],
         )
@@ -77,7 +79,9 @@ class CompareCollectionsTests(unittest.TestCase):
         self.assertGreaterEqual(result["action_counts"]["keep_b"], 1)
 
     def test_compare_emits_fuzzy_candidate_for_close_song_artist_duration(self):
-        a = make_file("A/Album/Believer.mp3", "Imagine Dragons", "Evolve", "Believer", 204.0)
+        a = make_file(
+            "A/Album/Believer.mp3", "Imagine Dragons", "Evolve", "Believer", 204.0
+        )
         b = make_file(
             "B/Album/Beliver.mp3",
             "Imagine Dragon",
@@ -125,12 +129,18 @@ class CompareCollectionsTests(unittest.TestCase):
         policy = assess_duplicate_pair(a, b)
         self.assertEqual(policy["classification"], "version_conflict")
         result = compare_collections([a], [b])
-        self.assertEqual(result["exact_matches"][0]["recommended_action"], "keep_both_versions")
+        self.assertEqual(
+            result["exact_matches"][0]["recommended_action"], "keep_both_versions"
+        )
         self.assertEqual(result["action_counts"]["keep_both_versions"], 1)
 
     def test_fuzzy_match_is_manual_review(self):
-        a = make_file("A/Album/Believer.wav", "Imagine Dragons", "Evolve", "Believer", 204.0)
-        b = make_file("B/Album/Beliver.mp3", "Imagine Dragon", "Evolve", "Beliver", 205.0)
+        a = make_file(
+            "A/Album/Believer.wav", "Imagine Dragons", "Evolve", "Believer", 204.0
+        )
+        b = make_file(
+            "B/Album/Beliver.mp3", "Imagine Dragon", "Evolve", "Beliver", 205.0
+        )
         result = compare_collections(
             [a],
             [b],
@@ -156,22 +166,37 @@ class CompareCollectionsTests(unittest.TestCase):
         a.version_hints = ["remaster", "remaster_year_1994"]
         b.version_hints = ["remaster", "remaster_year_2011"]
         result = compare_collections([a], [b])
-        self.assertEqual(result["exact_matches"][0]["duplicate_policy"]["classification"], "version_conflict")
-        self.assertEqual(result["exact_matches"][0]["recommended_action"], "keep_both_versions")
+        self.assertEqual(
+            result["exact_matches"][0]["duplicate_policy"]["classification"],
+            "version_conflict",
+        )
+        self.assertEqual(
+            result["exact_matches"][0]["recommended_action"], "keep_both_versions"
+        )
 
     def test_duration_conflict_at_exactly_5_seconds(self):
         a = make_file("A/Album/Song.mp3", "Artist", "Album", "Song", 200.0)
         b = make_file("B/Album/Song.mp3", "Artist", "Album", "Song", 205.0)
         result = compare_collections([a], [b])
         match = result["exact_matches"][0]
-        self.assertEqual(match["duplicate_policy"]["classification"], "duration_conflict")
+        self.assertEqual(
+            match["duplicate_policy"]["classification"], "duration_conflict"
+        )
         self.assertEqual(match["recommended_action"], "manual_review")
 
     def test_manual_review_action_count_matches_top_k_truncated_fuzzy_candidates(self):
-        a1 = make_file("A/Album/Believer.wav", "Imagine Dragons", "Evolve", "Believer", 204.0)
-        a2 = make_file("A/Album/Natural.wav", "Imagine Dragons", "Evolve", "Natural", 185.0)
-        b1 = make_file("B/Album/Beliver.mp3", "Imagine Dragon", "Evolve", "Beliver", 205.0)
-        b2 = make_file("B/Album/Naturl.mp3", "Imagine Dragon", "Evolve", "Naturl", 186.0)
+        a1 = make_file(
+            "A/Album/Believer.wav", "Imagine Dragons", "Evolve", "Believer", 204.0
+        )
+        a2 = make_file(
+            "A/Album/Natural.wav", "Imagine Dragons", "Evolve", "Natural", 185.0
+        )
+        b1 = make_file(
+            "B/Album/Beliver.mp3", "Imagine Dragon", "Evolve", "Beliver", 205.0
+        )
+        b2 = make_file(
+            "B/Album/Naturl.mp3", "Imagine Dragon", "Evolve", "Naturl", 186.0
+        )
 
         result = compare_collections(
             [a1, a2],
@@ -202,8 +227,12 @@ class CompareCollectionsTests(unittest.TestCase):
         self.assertEqual(result["fuzzy_candidate_count"], 0)
 
     def test_fuzzy_candidates_are_not_counted_as_only_in(self):
-        a = make_file("A/Album/Believer.wav", "Imagine Dragons", "Evolve", "Believer", 204.0)
-        b = make_file("B/Album/Beliver.mp3", "Imagine Dragon", "Evolve", "Beliver", 205.0)
+        a = make_file(
+            "A/Album/Believer.wav", "Imagine Dragons", "Evolve", "Believer", 204.0
+        )
+        b = make_file(
+            "B/Album/Beliver.mp3", "Imagine Dragon", "Evolve", "Beliver", 205.0
+        )
 
         result = compare_collections(
             [a],
@@ -220,7 +249,9 @@ class CompareCollectionsTests(unittest.TestCase):
         self.assertEqual(result["action_counts"]["add_to_b"], 0)
 
     def test_exact_pairing_prefers_matching_version_hints(self):
-        a_live = make_file("A/Album/01 - Song Live.mp3", "Artist", "Album", "Song", 200.0)
+        a_live = make_file(
+            "A/Album/01 - Song Live.mp3", "Artist", "Album", "Song", 200.0
+        )
         a_clean = make_file("A/Album/02 - Song.mp3", "Artist", "Album", "Song", 200.0)
         b_clean = make_file("B/Album/Song.mp3", "Artist", "Album", "Song", 200.0)
         b_live = make_file("B/Album/Song (Live).mp3", "Artist", "Album", "Song", 200.0)
@@ -258,7 +289,10 @@ class CompareCollectionsTests(unittest.TestCase):
         result = compare_collections([a1, a2], [b1, b2], top_k=0)
 
         pairs = {
-            (Path(match["file_a"]["relative_path"]).name, Path(match["file_b"]["relative_path"]).name)
+            (
+                Path(match["file_a"]["relative_path"]).name,
+                Path(match["file_b"]["relative_path"]).name,
+            )
             for match in result["exact_matches"]
         }
         self.assertEqual(pairs, {("01.mp3", "01.mp3"), ("02.mp3", "02.mp3")})

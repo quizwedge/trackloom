@@ -2,6 +2,4 @@
 # Copyright (C) 2026 Dan Getz, Jr.
 from setuptools import setup
 
-
 setup()
-

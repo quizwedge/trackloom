@@ -95,7 +95,9 @@ class PlannerTests(unittest.TestCase):
             plan = build_copy_plan(payload, Path(tmp))
 
         op = plan["operations"][0]
-        self.assertTrue(op["preferred_destination_path"].endswith("Artist/Album/newname.flac"))
+        self.assertTrue(
+            op["preferred_destination_path"].endswith("Artist/Album/newname.flac")
+        )
         self.assertEqual(op["replace_target_path"], "/dst/b/Artist/Album/oldname.mp3")
 
 

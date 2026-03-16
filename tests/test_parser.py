@@ -73,7 +73,13 @@ class ParseTagFieldsTests(unittest.TestCase):
         fake_audio = type(
             "FakeAudio",
             (),
-            {"tags": {"artist": ["Artist X"], "album": ["Album Y"], "title": ["Song Z"]}},
+            {
+                "tags": {
+                    "artist": ["Artist X"],
+                    "album": ["Album Y"],
+                    "title": ["Song Z"],
+                }
+            },
         )()
         with patch.object(parser, "MutagenFile", return_value=fake_audio):
             parsed = parser.parse_fields_from_tags(Path("/tmp/test.mp3"))

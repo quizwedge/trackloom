@@ -16,7 +16,7 @@ class CompareConfig:
     top_k: int
 
     @classmethod
-    def from_args(cls, args: Any) -> "CompareConfig":
+    def from_args(cls, args: Any) -> CompareConfig:
         return cls(
             fuzzy_threshold=float(args.fuzzy_threshold),
             close_duration_seconds=float(args.close_duration_seconds),
@@ -34,7 +34,9 @@ class CompareConfig:
         if self.duration_conflict_seconds < 0:
             raise ValueError("--duration-conflict-seconds must be >= 0")
         if self.duration_conflict_seconds < self.close_duration_seconds:
-            raise ValueError("--duration-conflict-seconds must be >= --close-duration-seconds")
+            raise ValueError(
+                "--duration-conflict-seconds must be >= --close-duration-seconds"
+            )
         if self.min_song_similarity < 0 or self.min_song_similarity > 1:
             raise ValueError("--min-song-sim must be between 0.0 and 1.0")
         if self.min_artist_similarity < 0 or self.min_artist_similarity > 1:

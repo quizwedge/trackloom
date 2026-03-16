@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from trackloom.plan_io import load_plan_json, write_plan_json, validate_plan_operations
+from trackloom.plan_io import load_plan_json, validate_plan_operations, write_plan_json
 
 
 class PlanIoTests(unittest.TestCase):
@@ -47,7 +47,9 @@ class PlanIoTests(unittest.TestCase):
             loaded = load_plan_json(path)
         self.assertEqual(len(loaded["operations"]), 1)
         self.assertEqual(loaded["operations"][0]["action"], "add_to_b")
-        self.assertEqual(loaded["operations"][0]["preferred_destination_path"], "/tmp/b.mp3")
+        self.assertEqual(
+            loaded["operations"][0]["preferred_destination_path"], "/tmp/b.mp3"
+        )
 
     def test_load_plan_json_missing_key(self):
         payload = {

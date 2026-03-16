@@ -49,7 +49,9 @@ def _write_dummy(path: Path, data: bytes) -> None:
 
 def _run(cmd: list[str]) -> bool:
     try:
-        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(
+            cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
         return True
     except Exception:
         return False
@@ -169,22 +171,14 @@ def build_demo_tree(base: Path, force: bool) -> None:
     _write_tone_wav(
         a / "The Artist" / "Live Cuts" / "03 - Sky Song (Live).wav", duration_s=2.20
     )
-    _write_tone_wav(
-        b / "The Artist" / "Studio Cuts" / "Sky Song.wav", duration_s=2.20
-    )
+    _write_tone_wav(b / "The Artist" / "Studio Cuts" / "Sky Song.wav", duration_s=2.20)
 
     # Replace preference candidate (A higher sample rate/bit depth than B).
-    _write_tone_wav(
-        a / "Duo" / "Numbers" / "02 - Counting Stars.wav", duration_s=2.10
-    )
-    _write_tone_wav(
-        b / "Duo" / "Numbers" / "Counting Stars.wav", duration_s=2.35
-    )
+    _write_tone_wav(a / "Duo" / "Numbers" / "02 - Counting Stars.wav", duration_s=2.10)
+    _write_tone_wav(b / "Duo" / "Numbers" / "Counting Stars.wav", duration_s=2.35)
 
     # Track present only in A -> add_to_b.
-    _write_tone_wav(
-        a / "Newcomer" / "Debut" / "01 - Fresh Start.wav", duration_s=1.80
-    )
+    _write_tone_wav(a / "Newcomer" / "Debut" / "01 - Fresh Start.wav", duration_s=1.80)
 
     # Protected file for Plex-mode skip demo.
     _write_dummy(
@@ -242,11 +236,10 @@ def build_demo_tree(base: Path, force: bool) -> None:
             print(f"  - {line}")
     print("Try:")
     print(f"  trackloom compare {a} {b} --json")
+    print(f"  trackloom parse {a} --extensions .wav .mp3 .m4a .flac .m4p --json")
     print(
-        f"  trackloom parse {a} --extensions .wav .mp3 .m4a .flac .m4p --json"
-    )
-    print(
-        f"  trackloom plan {a} {b} --mode plex --extensions .wav .mp3 .m4a .flac .m4p --json"
+        "  trackloom plan "
+        f"{a} {b} --mode plex --extensions .wav .mp3 .m4a .flac .m4p --json"
     )
 
 

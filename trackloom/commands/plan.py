@@ -20,7 +20,9 @@ def cmd_plan(args: Namespace) -> int:
     compare_config = CompareConfig.from_args(args)
     compare_config.validate()
     extensions = normalize_extensions(args.extensions)
-    files_a, files_b = collect_audio_pair(args.dir_a, args.dir_b, extensions, args.progress)
+    files_a, files_b = collect_audio_pair(
+        args.dir_a, args.dir_b, extensions, args.progress
+    )
     compare_result = compare_payload(files_a, files_b, compare_config)
     plan_payload = build_copy_plan(compare_result, args.dir_b)
     plan_payload = apply_mode_to_plan_payload(
@@ -45,12 +47,16 @@ def cmd_plan(args: Namespace) -> int:
     )
     if plan_payload.get("mode_skipped_count"):
         print(
-            f"Mode skipped operations ({args.mode}): {plan_payload['mode_skipped_count']}"
+            "Mode skipped operations "
+            f"({args.mode}): {plan_payload['mode_skipped_count']}"
         )
     if args.write_plan_json is not None:
         print(f"Plan saved to: {args.write_plan_json}")
     for op in plan_payload["operations"][:20]:
-        print(f"- {op['action']}: {op['source_relative_path']} -> {op['destination_path']}")
+        print(
+            f"- {op['action']}: {op['source_relative_path']} -> "
+            f"{op['destination_path']}"
+        )
     if len(plan_payload["operations"]) > 20:
         print(f"... {len(plan_payload['operations']) - 20} more operations")
     return 0

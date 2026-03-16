@@ -18,7 +18,13 @@ class ApplyOpsTests(unittest.TestCase):
             src.write_text("hello")
 
             result = execute_operations(
-                [{"action": "add_to_b", "source_path": str(src), "destination_path": str(dst)}]
+                [
+                    {
+                        "action": "add_to_b",
+                        "source_path": str(src),
+                        "destination_path": str(dst),
+                    }
+                ]
             )
 
             self.assertTrue(dst.exists())
@@ -36,7 +42,13 @@ class ApplyOpsTests(unittest.TestCase):
             dst.write_text("existing")
 
             result = execute_operations(
-                [{"action": "add_to_b", "source_path": str(src), "destination_path": str(dst)}]
+                [
+                    {
+                        "action": "add_to_b",
+                        "source_path": str(src),
+                        "destination_path": str(dst),
+                    }
+                ]
             )
 
             self.assertEqual(result["executed_count"], 0)
@@ -52,7 +64,13 @@ class ApplyOpsTests(unittest.TestCase):
             src.write_text("hello")
 
             result = execute_operations(
-                [{"action": "add_to_b", "source_path": str(src), "destination_path": str(dst)}],
+                [
+                    {
+                        "action": "add_to_b",
+                        "source_path": str(src),
+                        "destination_path": str(dst),
+                    }
+                ],
                 dry_run=True,
             )
 
@@ -132,7 +150,9 @@ class ApplyOpsTests(unittest.TestCase):
             self.assertEqual(result["executed_count"], 1)
             self.assertEqual(result["skipped_count"], 0)
             self.assertEqual(result["executed"][0]["status"], "dry_run")
-            self.assertEqual(result["executed"][0]["quarantine_move"]["status"], "dry_run")
+            self.assertEqual(
+                result["executed"][0]["quarantine_move"]["status"], "dry_run"
+            )
             self.assertTrue(old_b.exists())
             self.assertFalse(quarantine.exists())
 
@@ -269,7 +289,9 @@ class ApplyOpsTests(unittest.TestCase):
 
             self.assertEqual(result["executed_count"], 0)
             self.assertEqual(result["skipped_count"], 1)
-            self.assertEqual(result["skipped"][0]["reason"], "replace_requires_quarantine")
+            self.assertEqual(
+                result["skipped"][0]["reason"], "replace_requires_quarantine"
+            )
             self.assertTrue(old_b.exists())
             self.assertFalse(preferred_dst.exists())
 
@@ -280,7 +302,13 @@ class ApplyOpsTests(unittest.TestCase):
             src.write_text("x")
             with self.assertRaises(ValueError):
                 execute_operations(
-                    [{"action": "add_to_b", "source_path": str(src), "destination_path": str(root / "d.mp3")}],
+                    [
+                        {
+                            "action": "add_to_b",
+                            "source_path": str(src),
+                            "destination_path": str(root / "d.mp3"),
+                        }
+                    ],
                     cleanup_mode="move-to-quarantine",
                     dir_b=root,
                 )
@@ -304,8 +332,16 @@ class ApplyOpsTests(unittest.TestCase):
                 return original_copy2(src, dst, *args, **kwargs)
 
             operations = [
-                {"action": "add_to_b", "source_path": str(src1), "destination_path": str(dst1)},
-                {"action": "add_to_b", "source_path": str(src2), "destination_path": str(dst2)},
+                {
+                    "action": "add_to_b",
+                    "source_path": str(src1),
+                    "destination_path": str(dst1),
+                },
+                {
+                    "action": "add_to_b",
+                    "source_path": str(src2),
+                    "destination_path": str(dst2),
+                },
             ]
             with patch("trackloom.apply_ops.shutil.copy2", side_effect=flaky_copy2):
                 result = execute_operations(operations)
@@ -331,14 +367,24 @@ class ApplyOpsTests(unittest.TestCase):
 
             with patch("trackloom.apply_ops.shutil.copy2", side_effect=flaky_copy2):
                 result = execute_operations(
-                    [{"action": "add_to_b", "source_path": str(src), "destination_path": str(dst)}]
+                    [
+                        {
+                            "action": "add_to_b",
+                            "source_path": str(src),
+                            "destination_path": str(dst),
+                        }
+                    ]
                 )
 
             self.assertEqual(result["executed_count"], 0)
             self.assertEqual(result["skipped_count"], 1)
             self.assertFalse(dst.exists())
             if dst.parent.exists():
-                temp_files = [p.name for p in dst.parent.iterdir() if p.name.startswith(".trackloom_tmp_")]
+                temp_files = [
+                    p.name
+                    for p in dst.parent.iterdir()
+                    if p.name.startswith(".trackloom_tmp_")
+                ]
                 self.assertEqual(temp_files, [])
 
     def test_replace_quarantine_rolls_back_on_copy_failure(self):
@@ -364,7 +410,9 @@ class ApplyOpsTests(unittest.TestCase):
                 "replace_target_path": str(old_b),
             }
 
-            with patch("trackloom.apply_ops.shutil.copy2", side_effect=OSError("copy failure")):
+            with patch(
+                "trackloom.apply_ops.shutil.copy2", side_effect=OSError("copy failure")
+            ):
                 result = execute_operations(
                     [operation],
                     cleanup_mode="move-to-quarantine",

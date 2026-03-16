@@ -3,27 +3,33 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from rapidfuzz.fuzz import ratio as rapidfuzz_ratio
 
 from .parser import ParsedAudioFile
 
 
-def _choose_field(tag_value: Optional[str], path_value: Optional[str]) -> Optional[str]:
+def _choose_field(tag_value: str | None, path_value: str | None) -> str | None:
     return tag_value or path_value
 
 
-def canonical_key(item: ParsedAudioFile) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+def canonical_key(
+    item: ParsedAudioFile,
+) -> tuple[str | None, str | None, str | None]:
     artist = _choose_field(
         item.normalized_tag_fields.artist, item.normalized_path_fields.artist
     )
-    album = _choose_field(item.normalized_tag_fields.album, item.normalized_path_fields.album)
-    song = _choose_field(item.normalized_tag_fields.song, item.normalized_path_fields.song)
+    album = _choose_field(
+        item.normalized_tag_fields.album, item.normalized_path_fields.album
+    )
+    song = _choose_field(
+        item.normalized_tag_fields.song, item.normalized_path_fields.song
+    )
     return (artist, album, song)
 
 
-def _has_complete_key(key: Tuple[Optional[str], Optional[str], Optional[str]]) -> bool:
+def _has_complete_key(key: tuple[str | None, str | None, str | None]) -> bool:
     return all(part is not None for part in key)
 
 
@@ -31,7 +37,9 @@ def _stable_item_sort_key(item: ParsedAudioFile) -> str:
     return (item.relative_path or "").casefold()
 
 
-def _stable_key_sort_value(key: Tuple[Optional[str], Optional[str], Optional[str]]) -> Tuple[str, str, str]:
+def _stable_key_sort_value(
+    key: tuple[str | None, str | None, str | None],
+) -> tuple[str, str, str]:
     return (
         (key[0] or "").casefold(),
         (key[1] or "").casefold(),
@@ -39,7 +47,7 @@ def _stable_key_sort_value(key: Tuple[Optional[str], Optional[str], Optional[str
     )
 
 
-def _text_similarity(a: Optional[str], b: Optional[str]) -> float:
+def _text_similarity(a: str | None, b: str | None) -> float:
     if not a or not b:
         return 0.0
     return rapidfuzz_ratio(a, b) / 100.0
@@ -48,7 +56,7 @@ def _text_similarity(a: Optional[str], b: Optional[str]) -> float:
 BLOCK_ARTICLES = {"the", "a", "an"}
 
 
-def _block_char(value: Optional[str]) -> str:
+def _block_char(value: str | None) -> str:
     if not value:
         return ""
     tokens = value.split()
@@ -63,10 +71,10 @@ def _block_char(value: Optional[str]) -> str:
     return digit
 
 
-def _blocking_keys(artist: Optional[str], song: Optional[str]) -> List[Tuple[str, str]]:
+def _blocking_keys(artist: str | None, song: str | None) -> list[tuple[str, str]]:
     artist_key = _block_char(artist)
     song_key = _block_char(song)
-    keys: List[Tuple[str, str]] = []
+    keys: list[tuple[str, str]] = []
     if artist_key and song_key:
         keys.append((artist_key, song_key))
     if artist_key:
@@ -78,18 +86,22 @@ def _blocking_keys(artist: Optional[str], song: Optional[str]) -> List[Tuple[str
     return keys
 
 
-def _version_signature(item: ParsedAudioFile) -> Tuple[str, ...]:
+def _version_signature(item: ParsedAudioFile) -> tuple[str, ...]:
     return tuple(item.version_hints or [])
 
 
 def _pair_by_duration(
-    a_items: List[ParsedAudioFile],
-    b_items: List[ParsedAudioFile],
-) -> Tuple[List[Tuple[ParsedAudioFile, ParsedAudioFile]], List[ParsedAudioFile], List[ParsedAudioFile]]:
-    pairs: List[Tuple[ParsedAudioFile, ParsedAudioFile]] = []
+    a_items: list[ParsedAudioFile],
+    b_items: list[ParsedAudioFile],
+) -> tuple[
+    list[tuple[ParsedAudioFile, ParsedAudioFile]],
+    list[ParsedAudioFile],
+    list[ParsedAudioFile],
+]:
+    pairs: list[tuple[ParsedAudioFile, ParsedAudioFile]] = []
     remaining_b = sorted(b_items, key=_stable_item_sort_key)
     remaining_a = sorted(a_items, key=_stable_item_sort_key)
-    leftover_a: List[ParsedAudioFile] = []
+    leftover_a: list[ParsedAudioFile] = []
 
     for item_a in remaining_a:
         if not remaining_b:
@@ -115,15 +127,19 @@ def _pair_by_duration(
 
 
 def _pair_exact_candidates(
-    a_items: List[ParsedAudioFile],
-    b_items: List[ParsedAudioFile],
-) -> Tuple[List[Tuple[ParsedAudioFile, ParsedAudioFile]], List[ParsedAudioFile], List[ParsedAudioFile]]:
-    pairs: List[Tuple[ParsedAudioFile, ParsedAudioFile]] = []
-    remaining_a: List[ParsedAudioFile] = []
-    remaining_b: List[ParsedAudioFile] = []
+    a_items: list[ParsedAudioFile],
+    b_items: list[ParsedAudioFile],
+) -> tuple[
+    list[tuple[ParsedAudioFile, ParsedAudioFile]],
+    list[ParsedAudioFile],
+    list[ParsedAudioFile],
+]:
+    pairs: list[tuple[ParsedAudioFile, ParsedAudioFile]] = []
+    remaining_a: list[ParsedAudioFile] = []
+    remaining_b: list[ParsedAudioFile] = []
 
-    a_groups: Dict[Tuple[str, ...], List[ParsedAudioFile]] = {}
-    b_groups: Dict[Tuple[str, ...], List[ParsedAudioFile]] = {}
+    a_groups: dict[tuple[str, ...], list[ParsedAudioFile]] = {}
+    b_groups: dict[tuple[str, ...], list[ParsedAudioFile]] = {}
     for item in a_items:
         a_groups.setdefault(_version_signature(item), []).append(item)
     for item in b_items:
@@ -152,11 +168,11 @@ def _pair_exact_candidates(
 
 
 def _duration_score(
-    duration_a: Optional[float],
-    duration_b: Optional[float],
+    duration_a: float | None,
+    duration_b: float | None,
     close_duration_seconds: float,
     duration_conflict_seconds: float,
-) -> Tuple[float, Optional[float]]:
+) -> tuple[float, float | None]:
     if duration_a is None or duration_b is None:
         return 0.5, None
     diff = abs(duration_a - duration_b)
@@ -207,11 +223,11 @@ def _pair_classification(
     file_a: ParsedAudioFile,
     file_b: ParsedAudioFile,
     duration_conflict_seconds: float,
-) -> Tuple[str, Optional[float], List[str]]:
+) -> tuple[str, float | None, list[str]]:
     reasons = []
-    hints_a: Set[str] = set(file_a.version_hints)
-    hints_b: Set[str] = set(file_b.version_hints)
-    duration_diff = None
+    hints_a: set[str] = set(file_a.version_hints)
+    hints_b: set[str] = set(file_b.version_hints)
+    duration_diff: float | None = None
     if file_a.duration_seconds is not None and file_b.duration_seconds is not None:
         duration_diff = abs(file_a.duration_seconds - file_b.duration_seconds)
 
@@ -231,8 +247,10 @@ def _pair_classification(
 
 
 def assess_duplicate_pair(
-    file_a: ParsedAudioFile, file_b: ParsedAudioFile, duration_conflict_seconds: float = 5.0
-) -> Dict[str, Any]:
+    file_a: ParsedAudioFile,
+    file_b: ParsedAudioFile,
+    duration_conflict_seconds: float = 5.0,
+) -> dict[str, Any]:
     classification, duration_diff, reasons = _pair_classification(
         file_a, file_b, duration_conflict_seconds=duration_conflict_seconds
     )
@@ -264,7 +282,7 @@ def assess_duplicate_pair(
     }
 
 
-def recommend_action_for_pair(duplicate_policy: Dict[str, Any]) -> str:
+def recommend_action_for_pair(duplicate_policy: dict[str, Any]) -> str:
     classification = duplicate_policy.get("classification")
     preferred_side = duplicate_policy.get("preferred_side")
 
@@ -285,13 +303,13 @@ class FuzzyCandidate:
     song_similarity: float
     artist_similarity: float
     duration_score: float
-    duration_diff_seconds: Optional[float]
-    duplicate_policy: Dict[str, Any]
+    duration_diff_seconds: float | None
+    duplicate_policy: dict[str, Any]
     recommended_action: str
     file_a: ParsedAudioFile
     file_b: ParsedAudioFile
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "score": self.score,
             "song_similarity": self.song_similarity,
@@ -306,8 +324,8 @@ class FuzzyCandidate:
 
 
 def compare_collections(
-    files_a: List[ParsedAudioFile],
-    files_b: List[ParsedAudioFile],
+    files_a: list[ParsedAudioFile],
+    files_b: list[ParsedAudioFile],
     fuzzy_threshold: float = 0.75,
     close_duration_seconds: float = 1.0,
     duration_conflict_seconds: float = 5.0,
@@ -315,9 +333,13 @@ def compare_collections(
     min_artist_similarity: float = 0.65,
     top_k: int = 3,
     max_rejections: int = 200,
-) -> Dict[str, Any]:
-    key_to_a: Dict[Tuple[Optional[str], Optional[str], Optional[str]], List[ParsedAudioFile]] = {}
-    key_to_b: Dict[Tuple[Optional[str], Optional[str], Optional[str]], List[ParsedAudioFile]] = {}
+) -> dict[str, Any]:
+    key_to_a: dict[
+        tuple[str | None, str | None, str | None], list[ParsedAudioFile]
+    ] = {}
+    key_to_b: dict[
+        tuple[str | None, str | None, str | None], list[ParsedAudioFile]
+    ] = {}
 
     exact_matches = []
     action_counts = {
@@ -334,8 +356,8 @@ def compare_collections(
     }
     only_in_a = []
     only_in_b = []
-    unmatched_a: List[ParsedAudioFile] = []
-    unmatched_b: List[ParsedAudioFile] = []
+    unmatched_a: list[ParsedAudioFile] = []
+    unmatched_b: list[ParsedAudioFile] = []
 
     for item in files_a:
         key = canonical_key(item)
@@ -379,9 +401,9 @@ def compare_collections(
         if extras_b:
             unmatched_b.extend(extras_b)
 
-    fuzzy_candidates_all: List[FuzzyCandidate] = []
+    fuzzy_candidates_all: list[FuzzyCandidate] = []
     fuzzy_rejections = []
-    block_index: Dict[Tuple[str, str], List[ParsedAudioFile]] = {}
+    block_index: dict[tuple[str, str], list[ParsedAudioFile]] = {}
     for item_b in unmatched_b:
         song_b = _choose_field(
             item_b.normalized_tag_fields.song, item_b.normalized_path_fields.song
@@ -403,7 +425,7 @@ def compare_collections(
         if keys == [("", "")]:
             candidates = unmatched_b
         else:
-            seen: Set[str] = set()
+            seen: set[str] = set()
             candidates = []
             for key in keys:
                 for item_b in block_index.get(key, []):
@@ -417,7 +439,8 @@ def compare_collections(
                 item_b.normalized_tag_fields.song, item_b.normalized_path_fields.song
             )
             artist_b = _choose_field(
-                item_b.normalized_tag_fields.artist, item_b.normalized_path_fields.artist
+                item_b.normalized_tag_fields.artist,
+                item_b.normalized_path_fields.artist,
             )
             song_sim = _text_similarity(song_a, song_b)
             artist_sim = _text_similarity(artist_a, artist_b)
@@ -476,10 +499,9 @@ def compare_collections(
                 )
 
     fuzzy_candidates_all.sort(key=lambda c: c.score, reverse=True)
-    if top_k > 0:
-        fuzzy_candidates = fuzzy_candidates_all[:top_k]
-    else:
-        fuzzy_candidates = []
+    fuzzy_candidates = (
+        fuzzy_candidates_all[:top_k] if top_k > 0 else []
+    )
     fuzzy_dropped_count = max(0, len(fuzzy_candidates_all) - len(fuzzy_candidates))
 
     fuzzy_a_ids = {candidate.file_a.absolute_path for candidate in fuzzy_candidates_all}

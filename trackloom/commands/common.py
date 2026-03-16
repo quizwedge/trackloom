@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 from ..compare import compare_collections
 from ..mode import filter_operations_for_mode
@@ -56,9 +55,11 @@ def apply_mode_to_plan_payload(
     mode: str,
     dir_a: Path,
     dir_b: Path,
-    compare_payload: Optional[dict] = None,
+    compare_payload: dict | None = None,
 ) -> dict:
-    filtered_ops, mode_skipped = filter_operations_for_mode(plan_payload["operations"], mode)
+    filtered_ops, mode_skipped = filter_operations_for_mode(
+        plan_payload["operations"], mode
+    )
     plan_payload["operations"] = filtered_ops
     plan_payload["mode"] = mode
     plan_payload["mode_skipped_count"] = len(mode_skipped)
@@ -107,22 +108,19 @@ def print_parsed_items(label: str, root: Path, items: list) -> None:
         )
         print(
             f"  quality: duration={item.duration_seconds!r}s, "
-            f"bitrate_kbps={item.bitrate_kbps!r}, sample_rate_hz={item.sample_rate_hz!r}, "
-            f"bit_depth={item.bit_depth!r}, channels={item.channels!r}, codec={item.codec!r}"
+            f"bitrate_kbps={item.bitrate_kbps!r}, "
+            f"sample_rate_hz={item.sample_rate_hz!r}, "
+            f"bit_depth={item.bit_depth!r}, "
+            f"channels={item.channels!r}, "
+            f"codec={item.codec!r}"
         )
         print(f"  version_hints: {item.version_hints!r}")
 
 
 def print_next_apply_hints(dir_a: Path, dir_b: Path, plan_path: Path) -> None:
     print("Next commands:")
-    print(
-        f"  trackloom apply {dir_a} {dir_b} "
-        f"--from-plan-json {plan_path} --dry-run"
-    )
-    print(
-        f"  trackloom apply {dir_a} {dir_b} "
-        f"--from-plan-json {plan_path} --yes"
-    )
+    print(f"  trackloom apply {dir_a} {dir_b} --from-plan-json {plan_path} --dry-run")
+    print(f"  trackloom apply {dir_a} {dir_b} --from-plan-json {plan_path} --yes")
 
 
 def print_apply_change_summary(operations: list[dict], dir_b: str) -> None:

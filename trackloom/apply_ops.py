@@ -6,9 +6,9 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Optional
 
-from .models import ExecuteResult, ExecutedOperation, Operation, SkippedOperation
+from .models import ExecutedOperation, ExecuteResult, Operation, SkippedOperation
+
 
 def _unique_path(base_path: Path) -> Path:
     if not base_path.exists():
@@ -31,7 +31,9 @@ def _quarantine_destination(
         relative = target_path.relative_to(dir_b)
     except ValueError:
         try:
-            relative = target_path.resolve(strict=False).relative_to(dir_b.resolve(strict=False))
+            relative = target_path.resolve(strict=False).relative_to(
+                dir_b.resolve(strict=False)
+            )
         except ValueError:
             relative = Path(target_path.name)
     return _unique_path(quarantine_dir / relative)
@@ -50,7 +52,7 @@ def _copy_with_atomic_replace(source: Path, destination: Path) -> None:
     tmp_path = Path(tmp_name)
     try:
         shutil.copy2(source, tmp_path)
-        os.replace(tmp_path, destination)
+        tmp_path.replace(destination)
     except Exception:
         try:
             if tmp_path.exists():
@@ -64,8 +66,8 @@ def execute_operations(
     operations: list[Operation],
     dry_run: bool = False,
     cleanup_mode: str = "none",
-    quarantine_dir: Optional[Path] = None,
-    dir_b: Optional[Path] = None,
+    quarantine_dir: Path | None = None,
+    dir_b: Path | None = None,
 ) -> ExecuteResult:
     if cleanup_mode not in {"none", "move-to-quarantine"}:
         raise ValueError("cleanup_mode must be 'none' or 'move-to-quarantine'")
@@ -115,24 +117,30 @@ def execute_operations(
                     }
                 )
                 continue
-            if preferred_differs and replace_target is not None and replace_target.exists():
-                if cleanup_mode != "move-to-quarantine":
-                    skipped.append(
-                        {
-                            "operation": operation,
-                            "effective_destination_path": str(preferred_dst),
-                            "quarantine_move": quarantine_move,
-                            "reason": "replace_requires_quarantine",
-                        }
-                    )
-                    continue
+            if (
+                preferred_differs
+                and replace_target is not None
+                and replace_target.exists()
+                and cleanup_mode != "move-to-quarantine"
+            ):
+                skipped.append(
+                    {
+                        "operation": operation,
+                        "effective_destination_path": str(preferred_dst),
+                        "quarantine_move": quarantine_move,
+                        "reason": "replace_requires_quarantine",
+                    }
+                )
+                continue
 
             will_clear_effective_dst = (
                 should_quarantine
                 and replace_target is not None
                 and _paths_equivalent(effective_dst, replace_target)
             )
-            destination_blocked = effective_dst.exists() and not will_clear_effective_dst
+            destination_blocked = (
+                effective_dst.exists() and not will_clear_effective_dst
+            )
             if destination_blocked:
                 skipped.append(
                     {

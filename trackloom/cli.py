@@ -4,15 +4,14 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Optional
 
-from .mode import MODE_PLEX, MODE_STANDARD
-from .parser import SUPPORTED_EXTENSIONS
 from .commands.apply import cmd_apply
 from .commands.compare import cmd_compare
 from .commands.parse import cmd_parse
 from .commands.plan import cmd_plan
 from .commands.review import cmd_review
+from .mode import MODE_PLEX, MODE_STANDARD
+from .parser import SUPPORTED_EXTENSIONS
 
 EXIT_SUCCESS = 0
 EXIT_BLOCKED = 2
@@ -21,7 +20,7 @@ EXIT_CANCELLED = 3
 
 def _find_subparser(
     parser: argparse.ArgumentParser, name: str
-) -> Optional[argparse.ArgumentParser]:
+) -> argparse.ArgumentParser | None:
     for action in parser._actions:
         if isinstance(action, argparse._SubParsersAction):
             subparser = action.choices.get(name)
@@ -419,8 +418,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Optional command to show detailed help for",
     )
     return parser
-
-
 
 
 def main() -> int:

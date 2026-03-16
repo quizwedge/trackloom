@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Any, Dict, List
+from typing import Any
 
 from .planner import build_copy_plan
-
 
 REVIEW_ACTIONS = {
     "add_to_b",
@@ -24,14 +23,21 @@ def validate_manual_item_limit(total: int, max_manual_items: int) -> None:
         return
     if total > max_manual_items:
         raise RuntimeError(
-            f"Manual review items ({total}) exceed --max-manual-items ({max_manual_items})."
+            "Manual review items "
+            f"({total}) exceed --max-manual-items ({max_manual_items})."
         )
 
 
-def extract_manual_review_candidates(compare_payload: Dict[str, Any]) -> List[Dict[str, Any]]:
-    candidates: List[Dict[str, Any]] = []
+def extract_manual_review_candidates(
+    compare_payload: dict[str, Any],
+) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
 
-    def candidate_id(source: str, file_a: Dict[str, Any] | None, file_b: Dict[str, Any] | None) -> str:
+    def candidate_id(
+        source: str,
+        file_a: dict[str, Any] | None,
+        file_b: dict[str, Any] | None,
+    ) -> str:
         parts = [source]
         for record in (file_a or {}, file_b or {}):
             parts.append(str(record.get("absolute_path") or ""))
@@ -39,7 +45,7 @@ def extract_manual_review_candidates(compare_payload: Dict[str, Any]) -> List[Di
         digest = hashlib.sha1("|".join(parts).encode("utf-8")).hexdigest()
         return f"{source}:{digest[:12]}"
 
-    for idx, item in enumerate(compare_payload.get("exact_matches", [])):
+    for _idx, item in enumerate(compare_payload.get("exact_matches", [])):
         if item.get("recommended_action") != "manual_review":
             continue
         file_a = item.get("file_a")
@@ -55,7 +61,7 @@ def extract_manual_review_candidates(compare_payload: Dict[str, Any]) -> List[Di
             }
         )
 
-    for idx, item in enumerate(compare_payload.get("fuzzy_candidates", [])):
+    for _idx, item in enumerate(compare_payload.get("fuzzy_candidates", [])):
         if item.get("recommended_action") != "manual_review":
             continue
         file_a = item.get("file_a")
@@ -79,9 +85,11 @@ def extract_manual_review_candidates(compare_payload: Dict[str, Any]) -> List[Di
     return candidates
 
 
-def summarize_manual_review_candidates(candidates: List[Dict[str, Any]]) -> Dict[str, Any]:
+def summarize_manual_review_candidates(
+    candidates: list[dict[str, Any]],
+) -> dict[str, Any]:
     source_counts = {"exact": 0, "fuzzy": 0}
-    policy_counts: Dict[str, int] = {}
+    policy_counts: dict[str, int] = {}
 
     for candidate in candidates:
         source = candidate.get("source", "unknown")
@@ -102,9 +110,11 @@ def summarize_manual_review_candidates(candidates: List[Dict[str, Any]]) -> Dict
 
 
 def build_plan_from_review_decisions(
-    candidates: List[Dict[str, Any]], decisions: Dict[str, str], dir_b
-) -> Dict[str, Any]:
-    compare_subset: Dict[str, Any] = {"only_in_a": [], "exact_matches": []}
+    candidates: list[dict[str, Any]],
+    decisions: dict[str, str],
+    dir_b,
+) -> dict[str, Any]:
+    compare_subset: dict[str, Any] = {"only_in_a": [], "exact_matches": []}
     action_counts = {
         "add_to_b": 0,
         "replace_in_b_with_a": 0,

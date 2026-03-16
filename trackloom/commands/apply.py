@@ -9,6 +9,7 @@ from pathlib import Path
 
 from ..apply_ops import execute_operations
 from ..config import CompareConfig
+from ..mode import filter_operations_for_mode
 from ..plan_io import load_plan_json, validate_plan_operations
 from ..planner import build_copy_plan
 from ..report_io import write_report_csv, write_report_json
@@ -18,7 +19,6 @@ from .common import (
     normalize_extensions,
     print_apply_change_summary,
 )
-from ..mode import filter_operations_for_mode
 
 EXIT_SUCCESS = 0
 EXIT_CANCELLED = 3
@@ -41,7 +41,9 @@ def cmd_apply(args: Namespace) -> int:
         compare_config = CompareConfig.from_args(args)
         compare_config.validate()
         extensions = normalize_extensions(args.extensions)
-        files_a, files_b = collect_audio_pair(args.dir_a, args.dir_b, extensions, args.progress)
+        files_a, files_b = collect_audio_pair(
+            args.dir_a, args.dir_b, extensions, args.progress
+        )
         compare_result = compare_payload(files_a, files_b, compare_config)
         plan_payload = build_copy_plan(compare_result, args.dir_b)
         operations = plan_payload["operations"]
@@ -106,9 +108,11 @@ def cmd_apply(args: Namespace) -> int:
             return EXIT_CANCELLED
 
     if not args.yes:
-        response = input(
-            f"Apply {len(operations)} operation(s) to {args.dir_b}? [y/N]: "
-        ).strip().lower()
+        response = (
+            input(f"Apply {len(operations)} operation(s) to {args.dir_b}? [y/N]: ")
+            .strip()
+            .lower()
+        )
         if response not in {"y", "yes"}:
             cancelled_payload = {
                 "dir_a": effective_dir_a,
@@ -159,8 +163,12 @@ def cmd_apply(args: Namespace) -> int:
             "force": args.force,
             "mode": args.mode,
             "cleanup_mode": args.cleanup_mode,
-            "quarantine_dir": str(effective_quarantine_dir) if effective_quarantine_dir else None,
-            "source_plan_json": str(args.from_plan_json) if args.from_plan_json else None,
+            "quarantine_dir": str(effective_quarantine_dir)
+            if effective_quarantine_dir
+            else None,
+            "source_plan_json": str(args.from_plan_json)
+            if args.from_plan_json
+            else None,
             "source_decisions_file": source_decisions_file,
         },
         "result": exec_result,
@@ -175,8 +183,10 @@ def cmd_apply(args: Namespace) -> int:
         return 0
 
     print(
-        f"Apply result: requested={exec_result['requested_count']} "
-        f"executed={exec_result['executed_count']} skipped={exec_result['skipped_count']}"
+        "Apply result: "
+        f"requested={exec_result['requested_count']} "
+        f"executed={exec_result['executed_count']} "
+        f"skipped={exec_result['skipped_count']}"
     )
     if mode_skipped:
         print(f"Mode skipped operations ({args.mode}): {len(mode_skipped)}")

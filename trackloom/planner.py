@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any
 
 from .models import Operation
 
 COPY_ACTIONS = {"add_to_b", "replace_in_b_with_a", "keep_both_versions"}
 
 
-def _unique_destination(dest_root: Path, relative_path: str, reserved: Set[str]) -> Path:
+def _unique_destination(
+    dest_root: Path, relative_path: str, reserved: set[str]
+) -> Path:
     base = dest_root / relative_path
     if str(base) not in reserved and not base.exists():
         reserved.add(str(base))
@@ -28,7 +30,7 @@ def _unique_destination(dest_root: Path, relative_path: str, reserved: Set[str])
     return candidate
 
 
-def _replace_relative_path(file_a: Dict[str, Any], file_b: Dict[str, Any]) -> str:
+def _replace_relative_path(file_a: dict[str, Any], file_b: dict[str, Any]) -> str:
     a_rel = file_a.get("relative_path") or ""
     b_rel = file_b.get("relative_path") or ""
     if b_rel:
@@ -38,13 +40,13 @@ def _replace_relative_path(file_a: Dict[str, Any], file_b: Dict[str, Any]) -> st
     return a_rel
 
 
-def build_copy_plan(compare_payload: Dict[str, Any], dir_b: Path) -> Dict[str, Any]:
-    operations: List[Operation] = []
-    reserved_destinations: Set[str] = set()
+def build_copy_plan(compare_payload: dict[str, Any], dir_b: Path) -> dict[str, Any]:
+    operations: list[Operation] = []
+    reserved_destinations: set[str] = set()
 
     def maybe_add_operation(
         action: str,
-        file_record: Dict[str, Any],
+        file_record: dict[str, Any],
         preferred_relative_path: str | None = None,
         replace_target_path: str | None = None,
     ) -> None:
@@ -54,7 +56,9 @@ def build_copy_plan(compare_payload: Dict[str, Any], dir_b: Path) -> Dict[str, A
         relative_path = file_record["relative_path"]
         preferred_rel = preferred_relative_path or relative_path
         preferred_destination = dir_b / preferred_rel
-        destination_path = _unique_destination(dir_b, preferred_rel, reserved_destinations)
+        destination_path = _unique_destination(
+            dir_b, preferred_rel, reserved_destinations
+        )
         operations.append(
             {
                 "action": action,
