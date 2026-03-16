@@ -1,5 +1,9 @@
 # trackloom
 
+[![Tests](https://github.com/quizwedge/trackloom/actions/workflows/tests.yml/badge.svg)](https://github.com/quizwedge/trackloom/actions/workflows/tests.yml)
+[![Lint](https://github.com/quizwedge/trackloom/actions/workflows/lint.yml/badge.svg)](https://github.com/quizwedge/trackloom/actions/workflows/lint.yml)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
+
 Step 1 CLI for comparing audio libraries by first extracting normalized
 `artist`, `album`, and `song` from:
 
@@ -50,6 +54,12 @@ Dev commands:
 - `make all` (lint, format, test)
 - `make clean` (remove local dev artifacts)
 - `make help` (list available targets)
+
+Optional pre-commit hooks:
+
+```bash
+pre-commit install
+```
 
 ## Usage
 

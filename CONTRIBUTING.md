@@ -36,6 +36,12 @@ make clean
 make help
 ```
 
+## Optional pre-commit hooks
+
+```bash
+pre-commit install
+```
+
 ## Local CLI smoke checks
 
 ```bash
