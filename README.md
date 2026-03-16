@@ -47,6 +47,8 @@ Dev commands:
 - `make lint` (run Ruff)
 - `make format` (apply Ruff formatting)
 - `make test` (run pytest)
+- `make all` (lint, format, test)
+- `make clean` (remove local dev artifacts)
 
 ## Usage
 

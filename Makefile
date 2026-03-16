@@ -1,4 +1,10 @@
-.PHONY: dev lint format test
+.PHONY: all clean dev lint format test
+
+all: lint format test
+
+clean:
+	rm -rf .venv .pytest_cache __pycache__ *.egg-info
+
 
 dev:
 	python3 -m pip install -e .[dev]
