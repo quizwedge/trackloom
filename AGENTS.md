@@ -107,6 +107,16 @@ python3 -m pytest -q
   - full tagged `mp3/m4a/flac` fixtures require `ffmpeg`
 - Synthetic tuning helper:
   - `python3 scripts/tune_synthetic_thresholds.py`
+- Makefile shortcuts:
+  - `make dev` (install dev dependencies)
+  - `make lint` (run Ruff)
+  - `make format` (apply Ruff formatting)
+  - `make test` (run pytest)
+  - `make all` (lint, format, test)
+  - `make clean` (remove local dev artifacts)
+  - `make help` (list available targets)
+- Optional local hook setup:
+  - `pre-commit install`
 
 ## Key Files
 
