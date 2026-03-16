@@ -136,6 +136,7 @@ class CliIntegrationSmokeTests(unittest.TestCase):
             plan_payload = {
                 "dir_a": str(tmp / "A_plan"),
                 "dir_b": str(tmp / "B_plan"),
+                "schema_version": 1,
                 "operations": [
                     {
                         "action": "add_to_b",

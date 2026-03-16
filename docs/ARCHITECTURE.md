@@ -16,6 +16,7 @@ Trackloom is a local-first CLI for safe music-library merge planning.
 - caps fuzzy candidates via `--top-k` and tracks dropped fuzzy-eligible pairs
   (`fuzzy_dropped_count`) that are excluded from only-in results
 - applies duplicate policy (version/duration/fidelity/lossless boundary)
+- fuzzy similarity uses RapidFuzz and blocking to reduce comparisons
 
 3. `plan`
 - converts compare results into copy-only operations
@@ -28,7 +29,7 @@ Trackloom is a local-first CLI for safe music-library merge planning.
 
 5. `apply`
 - executes planned copy operations safely
-- optional quarantine handling for replace actions
+- quarantine handling for replace actions (default on)
 - emits JSON/CSV reports
 
 ## Safety invariants
@@ -36,7 +37,7 @@ Trackloom is a local-first CLI for safe music-library merge planning.
 - No overwrite of existing destination files.
 - No delete operations.
 - Copy/add model by default.
-- Cleanup (if enabled) is quarantine-only for replace actions.
+- Cleanup is quarantine-only for replace actions (default on, opt-out available).
 - Per-operation I/O failures are reported and processing continues.
 
 ## Module layout

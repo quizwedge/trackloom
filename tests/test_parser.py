@@ -34,6 +34,10 @@ class NormalizeForMatchTests(unittest.TestCase):
         value = "  Song___Name   -  Live "
         self.assertEqual(parser.normalize_for_match(value), "song name live")
 
+    def test_normalizes_ampersand_and_punctuation(self) -> None:
+        value = "Lost & Found!!!"
+        self.assertEqual(parser.normalize_for_match(value), "lost and found")
+
 
 class ParsePathFieldsTests(unittest.TestCase):
     def test_parses_artist_album_song_from_nested_path(self) -> None:

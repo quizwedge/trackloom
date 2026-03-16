@@ -11,8 +11,9 @@
   - increase cap or disable with `--max-manual-items 0`
 - `apply` cancelled unexpectedly with `--yes`:
   - expected safeguard; type `APPLY` when prompted or use `--force`
-- Quarantine mode error:
-  - provide `--quarantine-dir` with `--cleanup-mode move-to-quarantine`
+- Quarantine directory location:
+  - default is `<dir_b>/.trackloom_quarantine`
+  - override with `--quarantine-dir <path>` or disable with `--cleanup-mode none`
 - Plex mode skipped too many files:
   - inspect `mode_skipped_operations` in JSON output/report for reasons
   - ensure source extensions/codecs are Plex-compatible (DRM-protected files are excluded)

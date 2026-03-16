@@ -87,6 +87,11 @@ def execute_operations(
         replace_target = Path(replace_target_raw) if replace_target_raw else None
         action = operation.get("action")
         quarantine_move = None
+        preferred_differs = (
+            action == "replace_in_b_with_a"
+            and replace_target is not None
+            and not _paths_equivalent(preferred_dst, replace_target)
+        )
         should_quarantine = (
             cleanup_mode == "move-to-quarantine"
             and action == "replace_in_b_with_a"
@@ -110,6 +115,17 @@ def execute_operations(
                     }
                 )
                 continue
+            if preferred_differs and replace_target is not None and replace_target.exists():
+                if cleanup_mode != "move-to-quarantine":
+                    skipped.append(
+                        {
+                            "operation": operation,
+                            "effective_destination_path": str(preferred_dst),
+                            "quarantine_move": quarantine_move,
+                            "reason": "replace_requires_quarantine",
+                        }
+                    )
+                    continue
 
             will_clear_effective_dst = (
                 should_quarantine

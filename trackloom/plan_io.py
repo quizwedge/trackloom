@@ -8,6 +8,8 @@ from typing import Any, Dict, List
 
 from .models import Operation
 
+PLAN_SCHEMA_VERSION = 1
+
 REQUIRED_OPERATION_KEYS = {
     "action",
     "source_path",
@@ -20,8 +22,10 @@ ALLOWED_ACTIONS = {"add_to_b", "replace_in_b_with_a", "keep_both_versions"}
 
 def write_plan_json(path: Path, payload: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    data = dict(payload)
+    data.setdefault("schema_version", PLAN_SCHEMA_VERSION)
     with path.open("w", encoding="utf-8") as fh:
-        json.dump(payload, fh, indent=2)
+        json.dump(data, fh, indent=2)
         fh.write("\n")
 
 
@@ -31,6 +35,14 @@ def load_plan_json(path: Path) -> Dict[str, Any]:
 
     if not isinstance(data, dict):
         raise ValueError("Plan JSON must be an object.")
+
+    schema_version = data.get("schema_version")
+    if schema_version is not None and not isinstance(schema_version, int):
+        raise ValueError("Plan JSON schema_version must be an integer.")
+    if schema_version is not None and schema_version > PLAN_SCHEMA_VERSION:
+        raise ValueError(
+            f"Plan JSON schema_version {schema_version} is newer than supported {PLAN_SCHEMA_VERSION}."
+        )
 
     operations = data.get("operations")
     if not isinstance(operations, list):
@@ -106,9 +118,4 @@ def validate_plan_operations(operations: List[Operation], dir_a: Path, dir_b: Pa
                 raise ValueError(
                     "Operation at index "
                     f"{idx} replace_in_b_with_a requires preferred_destination_path and replace_target_path"
-                )
-            if preferred_path != replace_path:
-                raise ValueError(
-                    "Operation at index "
-                    f"{idx} replace_in_b_with_a requires preferred_destination_path to match replace_target_path"
                 )

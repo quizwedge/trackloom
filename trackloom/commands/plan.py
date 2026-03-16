@@ -6,7 +6,7 @@ import json
 from argparse import Namespace
 
 from ..config import CompareConfig
-from ..plan_io import write_plan_json
+from ..plan_io import PLAN_SCHEMA_VERSION, write_plan_json
 from ..planner import build_copy_plan
 from .common import (
     apply_mode_to_plan_payload,
@@ -26,6 +26,7 @@ def cmd_plan(args: Namespace) -> int:
     plan_payload = apply_mode_to_plan_payload(
         plan_payload, args.mode, args.dir_a, args.dir_b, compare_payload=compare_result
     )
+    plan_payload["schema_version"] = PLAN_SCHEMA_VERSION
 
     if args.write_plan_json is not None:
         write_plan_json(args.write_plan_json, plan_payload)

@@ -27,6 +27,7 @@ class PlanIoTests(unittest.TestCase):
             self.assertTrue(path.exists())
             loaded = load_plan_json(path)
         self.assertEqual(loaded["operations"][0]["action"], "add_to_b")
+        self.assertIn("schema_version", loaded)
 
     def test_load_plan_json_success(self):
         payload = {
@@ -128,7 +129,7 @@ class PlanIoTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 validate_plan_operations([operation], dir_a, dir_b)
 
-    def test_validate_plan_replace_requires_matching_preferred_and_replace_target(self):
+    def test_validate_plan_replace_allows_different_preferred_and_replace_target(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             dir_a = root / "a"
@@ -143,8 +144,25 @@ class PlanIoTests(unittest.TestCase):
                 "preferred_destination_path": str(dir_b / "song.mp3"),
                 "replace_target_path": str(dir_b / "other.mp3"),
             }
+            validate_plan_operations([operation], dir_a, dir_b)
+
+    def test_load_plan_rejects_future_schema_version(self):
+        payload = {
+            "schema_version": 999,
+            "operations": [
+                {
+                    "action": "add_to_b",
+                    "source_path": "/tmp/a.mp3",
+                    "source_relative_path": "Artist/Album/a.mp3",
+                    "destination_path": "/tmp/b.mp3",
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "plan.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
             with self.assertRaises(ValueError):
-                validate_plan_operations([operation], dir_a, dir_b)
+                load_plan_json(path)
 
 
 if __name__ == "__main__":

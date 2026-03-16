@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Dan Getz, Jr.
+import hashlib
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Optional
 
 from trackloom.review import (
     build_plan_from_review_decisions,
@@ -14,6 +16,15 @@ from trackloom.review import (
 
 def _file_record(path: str, rel: str):
     return {"absolute_path": path, "relative_path": rel}
+
+
+def _candidate_id(source: str, file_a: Optional[dict], file_b: Optional[dict]) -> str:
+    parts = [source]
+    for record in (file_a or {}, file_b or {}):
+        parts.append(str(record.get("absolute_path") or ""))
+        parts.append(str(record.get("relative_path") or ""))
+    digest = hashlib.sha1("|".join(parts).encode("utf-8")).hexdigest()
+    return f"{source}:{digest[:12]}"
 
 
 class ReviewTests(unittest.TestCase):
@@ -48,13 +59,13 @@ class ReviewTests(unittest.TestCase):
     def test_build_plan_from_review_decisions(self):
         candidates = [
             {
-                "id": "exact:0",
+                "id": _candidate_id("exact", _file_record("/tmp/a/song.wav", "Artist/Album/song.wav"), _file_record("/tmp/b/song.mp3", "Artist/Album/song.mp3")),
                 "source": "exact",
                 "file_a": _file_record("/tmp/a/song.wav", "Artist/Album/song.wav"),
                 "file_b": _file_record("/tmp/b/song.mp3", "Artist/Album/song.mp3"),
             },
             {
-                "id": "fuzzy:0",
+                "id": _candidate_id("fuzzy", _file_record("/tmp/a/song2.mp3", "Artist/Album/song2.mp3"), _file_record("/tmp/b/song2.mp3", "Artist/Album/song2.mp3")),
                 "source": "fuzzy",
                 "file_a": _file_record("/tmp/a/song2.mp3", "Artist/Album/song2.mp3"),
                 "file_b": _file_record("/tmp/b/song2.mp3", "Artist/Album/song2.mp3"),
@@ -63,7 +74,10 @@ class ReviewTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             plan = build_plan_from_review_decisions(
                 candidates,
-                decisions={"exact:0": "replace_in_b_with_a", "fuzzy:0": "add_to_b"},
+                decisions={
+                    candidates[0]["id"]: "replace_in_b_with_a",
+                    candidates[1]["id"]: "add_to_b",
+                },
                 dir_b=Path(tmp),
             )
         self.assertEqual(plan["review_action_counts"]["replace_in_b_with_a"], 1)

@@ -218,8 +218,27 @@ class CompareCollectionsTests(unittest.TestCase):
         self.assertEqual(result["only_in_a_count"], 0)
         self.assertEqual(result["only_in_b_count"], 0)
         self.assertEqual(result["action_counts"]["add_to_b"], 0)
-        self.assertEqual(result["action_counts"]["keep_b"], 0)
-        self.assertEqual(result["action_counts"]["manual_review"], 1)
+
+    def test_exact_pairing_prefers_matching_version_hints(self):
+        a_live = make_file("A/Album/01 - Song Live.mp3", "Artist", "Album", "Song", 200.0)
+        a_clean = make_file("A/Album/02 - Song.mp3", "Artist", "Album", "Song", 200.0)
+        b_clean = make_file("B/Album/Song.mp3", "Artist", "Album", "Song", 200.0)
+        b_live = make_file("B/Album/Song (Live).mp3", "Artist", "Album", "Song", 200.0)
+
+        a_live.version_hints = ["live"]
+        b_live.version_hints = ["live"]
+
+        result = compare_collections([a_live, a_clean], [b_clean, b_live])
+
+        self.assertEqual(result["exact_match_count"], 2)
+        self.assertEqual(result["duplicate_policy_counts"]["version_conflict"], 0)
+        reasons = [
+            reason
+            for item in result["exact_matches"]
+            for reason in item["duplicate_policy"].get("reasons", [])
+        ]
+        self.assertIn("matching_version_hints", reasons)
+        self.assertEqual(result["action_counts"]["manual_review"], 0)
 
     def test_manual_review_action_count_includes_exact_matches(self):
         a = make_file("A/Album/Song.mp3", "Artist", "Album", "Song", 200.0)

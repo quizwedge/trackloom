@@ -7,7 +7,7 @@ from argparse import Namespace
 
 from ..config import CompareConfig
 from ..decision_io import load_decisions, write_decisions
-from ..plan_io import write_plan_json
+from ..plan_io import PLAN_SCHEMA_VERSION, write_plan_json
 from ..review import (
     build_plan_from_review_decisions,
     extract_manual_review_candidates,
@@ -92,6 +92,7 @@ def cmd_review(args: Namespace) -> int:
                 "keep_both_versions": 0,
                 "skip": 0,
             },
+            "schema_version": PLAN_SCHEMA_VERSION,
         }
         if args.write_plan_json is not None:
             write_plan_json(args.write_plan_json, empty_payload)
@@ -197,6 +198,7 @@ def cmd_review(args: Namespace) -> int:
     plan_payload = apply_mode_to_plan_payload(plan_payload, args.mode, args.dir_a, args.dir_b)
     plan_payload["manual_review_count"] = len(candidates)
     plan_payload["summary"] = review_summary
+    plan_payload["schema_version"] = PLAN_SCHEMA_VERSION
     if args.decisions_file is not None:
         plan_payload["source_decisions_file"] = str(args.decisions_file)
 

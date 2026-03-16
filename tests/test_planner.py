@@ -74,6 +74,30 @@ class PlannerTests(unittest.TestCase):
         self.assertEqual(destinations[0], "song1 (from A).mp3")
         self.assertEqual(destinations[1], "song1 (from A 2).mp3")
 
+    def test_replace_uses_b_directory_with_a_filename(self):
+        payload = {
+            "only_in_a": [],
+            "exact_matches": [
+                {
+                    "recommended_action": "replace_in_b_with_a",
+                    "file_a": {
+                        "absolute_path": "/src/a/Artist/Album/newname.flac",
+                        "relative_path": "Artist/Album/newname.flac",
+                    },
+                    "file_b": {
+                        "absolute_path": "/dst/b/Artist/Album/oldname.mp3",
+                        "relative_path": "Artist/Album/oldname.mp3",
+                    },
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            plan = build_copy_plan(payload, Path(tmp))
+
+        op = plan["operations"][0]
+        self.assertTrue(op["preferred_destination_path"].endswith("Artist/Album/newname.flac"))
+        self.assertEqual(op["replace_target_path"], "/dst/b/Artist/Album/oldname.mp3")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -16,11 +16,31 @@ python3 -m pip install --upgrade pip setuptools wheel
 python3 -m pip install -e .
 ```
 
+Dependencies include `mutagen` (metadata parsing) and `rapidfuzz` (fast fuzzy matching).
+
 If editable install still fails on older `pip`, run:
 
 ```bash
 python3 -m pip install -e . --no-use-pep517
 ```
+
+## Development
+
+Recommended virtualenv setup:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install --upgrade pip setuptools wheel
+python3 -m pip install -e .
+python3 -m pytest -q
+```
+
+Dev commands:
+
+- `python3 scripts/make_demo_data.py --force` (generate demo fixtures)
+- `python3 scripts/tune_synthetic_thresholds.py` (synthetic threshold tuning)
+- `python3 -m trackloom.cli help` (CLI help smoke check)
 
 ## Usage
 
@@ -74,12 +94,10 @@ trackloom apply /path/to/A /path/to/B \
   --report-json /tmp/apply-dryrun.json \
   --report-csv /tmp/apply-dryrun.csv
 
-# 5) Real apply (optional quarantine cleanup)
+# 5) Real apply (default quarantine cleanup)
 trackloom apply /path/to/A /path/to/B \
   --from-plan-json /tmp/reviewed-plan.json \
   --yes \
-  --cleanup-mode move-to-quarantine \
-  --quarantine-dir /path/to/quarantine \
   --report-json /tmp/apply.json \
   --report-csv /tmp/apply.csv
 ```
@@ -133,8 +151,8 @@ For each audio file in both directories, step 1 extracts:
 - `tag_fields.artist`
 - `tag_fields.album`
 - `tag_fields.song`
-- `normalized_path_fields.*` (casefolded; `-` and `_` replaced with spaces; extra whitespace collapsed)
-- `normalized_tag_fields.*` (casefolded; `-` and `_` replaced with spaces; extra whitespace collapsed)
+- `normalized_path_fields.*` (casefolded; `&` -> `and`; punctuation -> spaces; `-` and `_` replaced with spaces; extra whitespace collapsed)
+- `normalized_tag_fields.*` (casefolded; `&` -> `and`; punctuation -> spaces; `-` and `_` replaced with spaces; extra whitespace collapsed)
 - `version_hints` (e.g. `live`, `remaster`, `radio_edit`, `acoustic`)
 
 Path parsing assumes `artist/album/track.ext`. Two-level paths are treated as
@@ -192,10 +210,11 @@ trackloom plan /path/to/A /path/to/B --mode plex --json > /tmp/plan-plex.json
 - use `--from-plan-json <file>` to apply a previously saved `plan --json` result
 - use `--report-json <file>` to save a full run report
 - use `--report-csv <file>` to save per-operation results
-- optional cleanup mode:
-  - `--cleanup-mode move-to-quarantine --quarantine-dir <dir>`
+- cleanup mode (default `move-to-quarantine`):
   - only applies to `replace_in_b_with_a` actions
   - moves replaced B files to quarantine instead of deleting
+  - `--quarantine-dir <dir>` overrides the default `<dir_b>/.trackloom_quarantine`
+  - use `--cleanup-mode none` to skip quarantine moves
 - in `--mode plex`, incompatible operations are skipped before execution and included in output/report payloads
 - per-operation copy/move failures are recorded as skipped `io_error` items and processing continues for remaining operations
 
@@ -208,6 +227,7 @@ Safety guarantees:
 - no delete operations are performed
 - plan destinations are deconflicted when possible using `"(from A)"` suffixes
 - plan JSON is validated: actions must be supported and paths must stay under `dir_a`/`dir_b`
+- plan JSON includes `schema_version` and newer versions are rejected
 
 Example reviewed workflow:
 
@@ -216,7 +236,9 @@ trackloom plan /path/to/A /path/to/B --write-plan-json /tmp/plan.json --json
 trackloom apply /path/to/A /path/to/B --from-plan-json /tmp/plan.json --dry-run
 trackloom apply /path/to/A /path/to/B --from-plan-json /tmp/plan.json --yes
 trackloom apply /path/to/A /path/to/B --yes --report-json /tmp/apply.json --report-csv /tmp/apply.csv
-trackloom apply /path/to/A /path/to/B --yes --cleanup-mode move-to-quarantine --quarantine-dir /path/to/quarantine
+trackloom apply /path/to/A /path/to/B --yes
+trackloom apply /path/to/A /path/to/B --yes --cleanup-mode none
+trackloom apply /path/to/A /path/to/B --yes --quarantine-dir /path/to/quarantine
 ```
 
 ## Review Workflow
@@ -267,7 +289,7 @@ trackloom review /path/to/A /path/to/B --decisions-file /tmp/review-decisions.js
 ## Decision Glossary
 
 - `add_to_b`: copy track from A into B.
-- `replace_in_b_with_a`: A is preferred duplicate; copy A into B, optionally quarantine old B file.
+- `replace_in_b_with_a`: A is preferred duplicate; copy A into B and quarantine old B file by default (opt-out via `--cleanup-mode none`).
 - `keep_b`: keep B’s current track; no copy from A.
 - `keep_both_versions`: keep both variants (for example version/remaster conflict).
 - `manual_review`: ambiguous item requiring explicit choice.

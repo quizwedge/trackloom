@@ -1,6 +1,6 @@
 # 0010: Optional Quarantine Cleanup for Replace Actions
 
-- Status: Accepted
+- Status: Superseded by 0027
 
 ## Context
 Copy-only avoids data loss but can leave clutter.

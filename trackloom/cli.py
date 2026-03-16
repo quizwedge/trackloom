@@ -273,14 +273,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     apply_cmd.add_argument(
         "--cleanup-mode",
         choices=["none", "move-to-quarantine"],
-        default="none",
-        help="Optional cleanup behavior for replace actions",
+        default="move-to-quarantine",
+        help="Cleanup behavior for replace actions (default: move-to-quarantine)",
     )
     apply_cmd.add_argument(
         "--quarantine-dir",
         type=Path,
         default=None,
-        help="Required when cleanup-mode is move-to-quarantine",
+        help="Optional quarantine destination (default: <dir_b>/.trackloom_quarantine)",
     )
     apply_cmd.add_argument(
         "--dry-run",

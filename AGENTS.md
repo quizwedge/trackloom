@@ -22,14 +22,14 @@ Recommended sequence:
 2. `plan` (`--write-plan-json`) to generate baseline operations
 3. `review` (with pagination + decisions persistence) for manual items
 4. `apply --dry-run` with reports
-5. `apply --yes` (optionally with quarantine cleanup)
+5. `apply --yes` (quarantine cleanup is default; use `--cleanup-mode none` to opt out)
 
 ## Safety Invariants (Do Not Break)
 
 - No overwrite of existing destination files.
 - No delete operations.
 - Copy/add model by default.
-- Optional cleanup is quarantine-only and only for `replace_in_b_with_a`.
+- Cleanup is quarantine-only and only for `replace_in_b_with_a` (default on).
 - `apply` requires confirmation by default.
 - `apply --yes` real writes require safeguard confirmation unless `--force`.
 - `apply` is best-effort per operation: I/O failures are reported as skipped `io_error` entries and the run continues.
@@ -165,7 +165,7 @@ Before a real apply run on production libraries:
    - `apply --dry-run --report-json ... --report-csv ...`
 5. Confirm safety settings for real run:
    - confirmation flow (`--yes`/`--force`) intentionally chosen
-   - quarantine mode/dir set if cleanup is desired
+  - quarantine mode/dir set if overriding defaults is desired
 6. Execute real apply with reports enabled.
 7. Archive outputs:
    - saved plan JSON

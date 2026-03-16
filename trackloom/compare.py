@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from difflib import SequenceMatcher
 from typing import Any, Dict, List, Optional, Set, Tuple
+
+from rapidfuzz.fuzz import ratio as rapidfuzz_ratio
 
 from .parser import ParsedAudioFile
 
@@ -41,7 +42,113 @@ def _stable_key_sort_value(key: Tuple[Optional[str], Optional[str], Optional[str
 def _text_similarity(a: Optional[str], b: Optional[str]) -> float:
     if not a or not b:
         return 0.0
-    return SequenceMatcher(None, a.lower(), b.lower()).ratio()
+    return rapidfuzz_ratio(a, b) / 100.0
+
+
+BLOCK_ARTICLES = {"the", "a", "an"}
+
+
+def _block_char(value: Optional[str]) -> str:
+    if not value:
+        return ""
+    tokens = value.split()
+    if tokens and tokens[0] in BLOCK_ARTICLES and len(tokens) > 1:
+        value = " ".join(tokens[1:])
+    digit = ""
+    for ch in value:
+        if ch.isalpha():
+            return ch
+        if not digit and ch.isdigit():
+            digit = ch
+    return digit
+
+
+def _blocking_keys(artist: Optional[str], song: Optional[str]) -> List[Tuple[str, str]]:
+    artist_key = _block_char(artist)
+    song_key = _block_char(song)
+    keys: List[Tuple[str, str]] = []
+    if artist_key and song_key:
+        keys.append((artist_key, song_key))
+    if artist_key:
+        keys.append((artist_key, ""))
+    if song_key:
+        keys.append(("", song_key))
+    if not keys:
+        keys.append(("", ""))
+    return keys
+
+
+def _version_signature(item: ParsedAudioFile) -> Tuple[str, ...]:
+    return tuple(item.version_hints or [])
+
+
+def _pair_by_duration(
+    a_items: List[ParsedAudioFile],
+    b_items: List[ParsedAudioFile],
+) -> Tuple[List[Tuple[ParsedAudioFile, ParsedAudioFile]], List[ParsedAudioFile], List[ParsedAudioFile]]:
+    pairs: List[Tuple[ParsedAudioFile, ParsedAudioFile]] = []
+    remaining_b = sorted(b_items, key=_stable_item_sort_key)
+    remaining_a = sorted(a_items, key=_stable_item_sort_key)
+    leftover_a: List[ParsedAudioFile] = []
+
+    for item_a in remaining_a:
+        if not remaining_b:
+            leftover_a.append(item_a)
+            continue
+        best_idx = None
+        best_key = None
+        for idx, item_b in enumerate(remaining_b):
+            if item_a.duration_seconds is None or item_b.duration_seconds is None:
+                metric = float("inf")
+            else:
+                metric = abs(item_a.duration_seconds - item_b.duration_seconds)
+            key = (metric, _stable_item_sort_key(item_b))
+            if best_key is None or key < best_key:
+                best_key = key
+                best_idx = idx
+        if best_idx is None:
+            leftover_a.append(item_a)
+            continue
+        pairs.append((item_a, remaining_b.pop(best_idx)))
+
+    return pairs, leftover_a, remaining_b
+
+
+def _pair_exact_candidates(
+    a_items: List[ParsedAudioFile],
+    b_items: List[ParsedAudioFile],
+) -> Tuple[List[Tuple[ParsedAudioFile, ParsedAudioFile]], List[ParsedAudioFile], List[ParsedAudioFile]]:
+    pairs: List[Tuple[ParsedAudioFile, ParsedAudioFile]] = []
+    remaining_a: List[ParsedAudioFile] = []
+    remaining_b: List[ParsedAudioFile] = []
+
+    a_groups: Dict[Tuple[str, ...], List[ParsedAudioFile]] = {}
+    b_groups: Dict[Tuple[str, ...], List[ParsedAudioFile]] = {}
+    for item in a_items:
+        a_groups.setdefault(_version_signature(item), []).append(item)
+    for item in b_items:
+        b_groups.setdefault(_version_signature(item), []).append(item)
+
+    shared_signatures = sorted(set(a_groups.keys()) & set(b_groups.keys()))
+    for signature in shared_signatures:
+        group_a = sorted(a_groups[signature], key=_stable_item_sort_key)
+        group_b = sorted(b_groups[signature], key=_stable_item_sort_key)
+        paired = min(len(group_a), len(group_b))
+        for idx in range(paired):
+            pairs.append((group_a[idx], group_b[idx]))
+        if len(group_a) > paired:
+            remaining_a.extend(group_a[paired:])
+        if len(group_b) > paired:
+            remaining_b.extend(group_b[paired:])
+
+    for signature in sorted(set(a_groups.keys()) - set(shared_signatures)):
+        remaining_a.extend(sorted(a_groups[signature], key=_stable_item_sort_key))
+    for signature in sorted(set(b_groups.keys()) - set(shared_signatures)):
+        remaining_b.extend(sorted(b_groups[signature], key=_stable_item_sort_key))
+
+    duration_pairs, leftover_a, leftover_b = _pair_by_duration(remaining_a, remaining_b)
+    pairs.extend(duration_pairs)
+    return pairs, leftover_a, leftover_b
 
 
 def _duration_score(
@@ -247,10 +354,10 @@ def compare_collections(
     for key in sorted(all_keys, key=_stable_key_sort_value):
         a_items = sorted(key_to_a.get(key, []), key=_stable_item_sort_key)
         b_items = sorted(key_to_b.get(key, []), key=_stable_item_sort_key)
-        paired = min(len(a_items), len(b_items))
-        for idx in range(paired):
+        pairs, extras_a, extras_b = _pair_exact_candidates(a_items, b_items)
+        for item_a, item_b in pairs:
             duplicate_policy = assess_duplicate_pair(
-                a_items[idx], b_items[idx], duration_conflict_seconds=duration_conflict_seconds
+                item_a, item_b, duration_conflict_seconds=duration_conflict_seconds
             )
             classification = duplicate_policy["classification"]
             if classification in duplicate_policy_counts:
@@ -263,19 +370,28 @@ def compare_collections(
                     "key": {"artist": key[0], "album": key[1], "song": key[2]},
                     "duplicate_policy": duplicate_policy,
                     "recommended_action": recommended_action,
-                    "file_a": a_items[idx].to_dict(),
-                    "file_b": b_items[idx].to_dict(),
+                    "file_a": item_a.to_dict(),
+                    "file_b": item_b.to_dict(),
                 }
             )
-        if len(a_items) > paired:
-            extras = a_items[paired:]
-            unmatched_a.extend(extras)
-        if len(b_items) > paired:
-            extras = b_items[paired:]
-            unmatched_b.extend(extras)
+        if extras_a:
+            unmatched_a.extend(extras_a)
+        if extras_b:
+            unmatched_b.extend(extras_b)
 
     fuzzy_candidates_all: List[FuzzyCandidate] = []
     fuzzy_rejections = []
+    block_index: Dict[Tuple[str, str], List[ParsedAudioFile]] = {}
+    for item_b in unmatched_b:
+        song_b = _choose_field(
+            item_b.normalized_tag_fields.song, item_b.normalized_path_fields.song
+        )
+        artist_b = _choose_field(
+            item_b.normalized_tag_fields.artist, item_b.normalized_path_fields.artist
+        )
+        for key in _blocking_keys(artist_b, song_b):
+            block_index.setdefault(key, []).append(item_b)
+
     for item_a in unmatched_a:
         song_a = _choose_field(
             item_a.normalized_tag_fields.song, item_a.normalized_path_fields.song
@@ -283,7 +399,20 @@ def compare_collections(
         artist_a = _choose_field(
             item_a.normalized_tag_fields.artist, item_a.normalized_path_fields.artist
         )
-        for item_b in unmatched_b:
+        keys = _blocking_keys(artist_a, song_a)
+        if keys == [("", "")]:
+            candidates = unmatched_b
+        else:
+            seen: Set[str] = set()
+            candidates = []
+            for key in keys:
+                for item_b in block_index.get(key, []):
+                    if item_b.absolute_path in seen:
+                        continue
+                    seen.add(item_b.absolute_path)
+                    candidates.append(item_b)
+
+        for item_b in candidates:
             song_b = _choose_field(
                 item_b.normalized_tag_fields.song, item_b.normalized_path_fields.song
             )

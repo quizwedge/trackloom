@@ -28,6 +28,16 @@ def _unique_destination(dest_root: Path, relative_path: str, reserved: Set[str])
     return candidate
 
 
+def _replace_relative_path(file_a: Dict[str, Any], file_b: Dict[str, Any]) -> str:
+    a_rel = file_a.get("relative_path") or ""
+    b_rel = file_b.get("relative_path") or ""
+    if b_rel:
+        b_path = Path(b_rel)
+        a_name = Path(a_rel).name if a_rel else b_path.name
+        return str(b_path.parent / a_name)
+    return a_rel
+
+
 def build_copy_plan(compare_payload: Dict[str, Any], dir_b: Path) -> Dict[str, Any]:
     operations: List[Operation] = []
     reserved_destinations: Set[str] = set()
@@ -69,7 +79,7 @@ def build_copy_plan(compare_payload: Dict[str, Any], dir_b: Path) -> Dict[str, A
             maybe_add_operation(
                 action,
                 file_a,
-                preferred_relative_path=file_b.get("relative_path") or file_a.get("relative_path"),
+                preferred_relative_path=_replace_relative_path(file_a, file_b),
                 replace_target_path=file_b.get("absolute_path"),
             )
         else:

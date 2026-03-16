@@ -20,7 +20,9 @@ TRACK_PREFIX_RE = re.compile(
     r"^\s*(?:cd\s*\d+\s*[-_. ]\s*)?(?:track\s*)?0*(\d{1,3})\s*[-_. )]+\s*(.+)$",
     re.IGNORECASE,
 )
+AMPERSAND_RE = re.compile(r"&")
 SEPARATOR_RE = re.compile(r"[_\-]+")
+PUNCTUATION_RE = re.compile(r"[^\w\s]+", re.UNICODE)
 WHITESPACE_RE = re.compile(r"\s+")
 REMASTER_YEAR_AFTER_RE = re.compile(r"remaster(?:ed)?[^\d]{0,6}(\d{4})", re.IGNORECASE)
 REMASTER_YEAR_BEFORE_RE = re.compile(r"(\d{4})[^\w]{0,3}remaster(?:ed)?", re.IGNORECASE)
@@ -83,7 +85,9 @@ def normalize_for_match(value: Optional[str]) -> Optional[str]:
     cleaned = _clean(value)
     if cleaned is None:
         return None
+    cleaned = AMPERSAND_RE.sub(" and ", cleaned)
     cleaned = cleaned.casefold()
+    cleaned = PUNCTUATION_RE.sub(" ", cleaned)
     cleaned = SEPARATOR_RE.sub(" ", cleaned)
     cleaned = WHITESPACE_RE.sub(" ", cleaned).strip()
     return cleaned or None

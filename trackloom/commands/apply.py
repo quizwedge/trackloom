@@ -61,9 +61,12 @@ def cmd_apply(args: Namespace) -> int:
             "mode_skipped_count": len(mode_skipped),
             "mode_skipped_operations": mode_skipped,
             "message": "No operations to apply.",
+            "result": {"executed": [], "skipped": []},
         }
         if args.report_json is not None:
             write_report_json(args.report_json, result)
+        if args.report_csv is not None:
+            write_report_csv(args.report_csv, result)
         if args.json:
             print(json.dumps(result, indent=2))
         else:
@@ -72,8 +75,9 @@ def cmd_apply(args: Namespace) -> int:
                 print(f"Report JSON: {args.report_json}")
         return EXIT_SUCCESS
 
-    if args.cleanup_mode == "move-to-quarantine" and args.quarantine_dir is None:
-        raise ValueError("--quarantine-dir is required when --cleanup-mode=move-to-quarantine")
+    effective_quarantine_dir = args.quarantine_dir
+    if args.cleanup_mode == "move-to-quarantine" and effective_quarantine_dir is None:
+        effective_quarantine_dir = Path(effective_dir_b) / ".trackloom_quarantine"
 
     if not args.json:
         print_apply_change_summary(operations, effective_dir_b)
@@ -89,9 +93,12 @@ def cmd_apply(args: Namespace) -> int:
                 "planned_operation_count": len(operations),
                 "applied": False,
                 "message": "Cancelled by safeguard confirmation.",
+                "result": {"executed": [], "skipped": []},
             }
             if args.report_json is not None:
                 write_report_json(args.report_json, cancelled_payload)
+            if args.report_csv is not None:
+                write_report_csv(args.report_csv, cancelled_payload)
             if args.json:
                 print(json.dumps(cancelled_payload, indent=2))
             else:
@@ -109,9 +116,12 @@ def cmd_apply(args: Namespace) -> int:
                 "planned_operation_count": len(operations),
                 "applied": False,
                 "message": "Cancelled by user.",
+                "result": {"executed": [], "skipped": []},
             }
             if args.report_json is not None:
                 write_report_json(args.report_json, cancelled_payload)
+            if args.report_csv is not None:
+                write_report_csv(args.report_csv, cancelled_payload)
             if args.json:
                 print(json.dumps(cancelled_payload, indent=2))
             else:
@@ -124,7 +134,7 @@ def cmd_apply(args: Namespace) -> int:
         operations,
         dry_run=args.dry_run,
         cleanup_mode=args.cleanup_mode,
-        quarantine_dir=args.quarantine_dir,
+        quarantine_dir=effective_quarantine_dir,
         dir_b=Path(effective_dir_b),
     )
     payload = {
@@ -149,7 +159,7 @@ def cmd_apply(args: Namespace) -> int:
             "force": args.force,
             "mode": args.mode,
             "cleanup_mode": args.cleanup_mode,
-            "quarantine_dir": str(args.quarantine_dir) if args.quarantine_dir else None,
+            "quarantine_dir": str(effective_quarantine_dir) if effective_quarantine_dir else None,
             "source_plan_json": str(args.from_plan_json) if args.from_plan_json else None,
             "source_decisions_file": source_decisions_file,
         },

@@ -2,6 +2,7 @@
 # Copyright (C) 2026 Dan Getz, Jr.
 from __future__ import annotations
 
+import hashlib
 from typing import Any, Dict, List
 
 from .planner import build_copy_plan
@@ -30,15 +31,25 @@ def validate_manual_item_limit(total: int, max_manual_items: int) -> None:
 def extract_manual_review_candidates(compare_payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     candidates: List[Dict[str, Any]] = []
 
+    def candidate_id(source: str, file_a: Dict[str, Any] | None, file_b: Dict[str, Any] | None) -> str:
+        parts = [source]
+        for record in (file_a or {}, file_b or {}):
+            parts.append(str(record.get("absolute_path") or ""))
+            parts.append(str(record.get("relative_path") or ""))
+        digest = hashlib.sha1("|".join(parts).encode("utf-8")).hexdigest()
+        return f"{source}:{digest[:12]}"
+
     for idx, item in enumerate(compare_payload.get("exact_matches", [])):
         if item.get("recommended_action") != "manual_review":
             continue
+        file_a = item.get("file_a")
+        file_b = item.get("file_b")
         candidates.append(
             {
-                "id": f"exact:{idx}",
+                "id": candidate_id("exact", file_a, file_b),
                 "source": "exact",
-                "file_a": item.get("file_a"),
-                "file_b": item.get("file_b"),
+                "file_a": file_a,
+                "file_b": file_b,
                 "duplicate_policy": item.get("duplicate_policy"),
                 "recommended_action": item.get("recommended_action"),
             }
@@ -47,9 +58,11 @@ def extract_manual_review_candidates(compare_payload: Dict[str, Any]) -> List[Di
     for idx, item in enumerate(compare_payload.get("fuzzy_candidates", [])):
         if item.get("recommended_action") != "manual_review":
             continue
+        file_a = item.get("file_a")
+        file_b = item.get("file_b")
         candidates.append(
             {
-                "id": f"fuzzy:{idx}",
+                "id": candidate_id("fuzzy", file_a, file_b),
                 "source": "fuzzy",
                 "score": item.get("score"),
                 "song_similarity": item.get("song_similarity"),
@@ -57,8 +70,8 @@ def extract_manual_review_candidates(compare_payload: Dict[str, Any]) -> List[Di
                 "duration_score": item.get("duration_score"),
                 "duration_diff_seconds": item.get("duration_diff_seconds"),
                 "duplicate_policy": item.get("duplicate_policy"),
-                "file_a": item.get("file_a"),
-                "file_b": item.get("file_b"),
+                "file_a": file_a,
+                "file_b": file_b,
                 "recommended_action": item.get("recommended_action"),
             }
         )

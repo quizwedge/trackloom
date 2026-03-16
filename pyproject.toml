@@ -14,6 +14,7 @@ classifiers = [
 ]
 dependencies = [
   "mutagen>=1.47.0",
+  "rapidfuzz>=3.9.0",
 ]
 
 [project.scripts]
