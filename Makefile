@@ -1,4 +1,4 @@
-.PHONY: all clean dev lint format test
+.PHONY: all clean dev lint format test help
 
 all: lint format test
 
@@ -17,3 +17,12 @@ format:
 
 test:
 	python3 -m pytest -q
+
+help:
+	@echo "Available targets:"
+	@echo "  make dev    - install dev dependencies"
+	@echo "  make lint   - run Ruff checks"
+	@echo "  make format - apply Ruff formatting"
+	@echo "  make test   - run pytest"
+	@echo "  make all    - lint, format, test"
+	@echo "  make clean  - remove local dev artifacts"

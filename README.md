@@ -49,6 +49,7 @@ Dev commands:
 - `make test` (run pytest)
 - `make all` (lint, format, test)
 - `make clean` (remove local dev artifacts)
+- `make help` (list available targets)
 
 ## Usage
 
