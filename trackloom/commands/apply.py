@@ -85,16 +85,27 @@ def cmd_apply(args: Namespace) -> int:
         print_apply_change_summary(operations, effective_dir_b)
 
     if args.yes and not args.dry_run and not args.force:
-        confirmation = input(
-            "You are applying real file changes with --yes. Type APPLY to continue: "
-        ).strip()
+        eof = False
+        try:
+            confirmation = input(
+                "You are applying real file changes with --yes. "
+                "Type APPLY to continue: "
+            ).strip()
+        except EOFError:
+            confirmation = ""
+            eof = True
         if confirmation != "APPLY":
+            message = (
+                "Cancelled due to EOF on stdin."
+                if eof
+                else "Cancelled by safeguard confirmation."
+            )
             cancelled_payload = {
                 "dir_a": effective_dir_a,
                 "dir_b": effective_dir_b,
                 "planned_operation_count": len(operations),
                 "applied": False,
-                "message": "Cancelled by safeguard confirmation.",
+                "message": message,
                 "result": {"executed": [], "skipped": []},
             }
             if args.report_json is not None:
@@ -104,22 +115,28 @@ def cmd_apply(args: Namespace) -> int:
             if args.json:
                 print(json.dumps(cancelled_payload, indent=2))
             else:
-                print("Cancelled by safeguard confirmation. No changes applied.")
+                print(f"{message} No changes applied.")
             return EXIT_CANCELLED
 
     if not args.yes:
-        response = (
-            input(f"Apply {len(operations)} operation(s) to {args.dir_b}? [y/N]: ")
-            .strip()
-            .lower()
-        )
+        eof = False
+        try:
+            response = (
+                input(f"Apply {len(operations)} operation(s) to {args.dir_b}? [y/N]: ")
+                .strip()
+                .lower()
+            )
+        except EOFError:
+            response = ""
+            eof = True
         if response not in {"y", "yes"}:
+            message = "Cancelled due to EOF on stdin." if eof else "Cancelled by user."
             cancelled_payload = {
                 "dir_a": effective_dir_a,
                 "dir_b": effective_dir_b,
                 "planned_operation_count": len(operations),
                 "applied": False,
-                "message": "Cancelled by user.",
+                "message": message,
                 "result": {"executed": [], "skipped": []},
             }
             if args.report_json is not None:
@@ -129,7 +146,7 @@ def cmd_apply(args: Namespace) -> int:
             if args.json:
                 print(json.dumps(cancelled_payload, indent=2))
             else:
-                print("Cancelled by user. No changes applied.")
+                print(f"{message} No changes applied.")
                 if args.report_json is not None:
                     print(f"Report JSON: {args.report_json}")
             return EXIT_CANCELLED

@@ -176,7 +176,17 @@ def cmd_review(args: Namespace) -> int:
                 )
             print(summary)
 
-        raw = input("review> ").strip().lower()
+        try:
+            raw = input("review> ").strip().lower()
+        except EOFError:
+            if args.decisions_file is not None:
+                write_decisions(args.decisions_file, decisions)
+                print(f"Decisions saved to: {args.decisions_file}")
+            print(
+                "Review cancelled due to EOF on stdin. "
+                "No reviewed plan changes applied."
+            )
+            return EXIT_CANCELLED
         if raw in {"done", "d"}:
             break
         if raw == "n":

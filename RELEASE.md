@@ -43,7 +43,7 @@ Use this checklist for versioned releases.
 - Summary:
   - <one-line overview>
 - Behavior changes:
-  - <matching/plan/apply/safety changes>
-  - <note: `--top-k` now caps reported fuzzy candidates only; dropped pairs counted in `fuzzy_dropped_count`>
+  - `apply`/`review` prompts now cancel cleanly on EOF while still emitting reports/decisions, which keeps automation from crashing when stdin closes.
+  - `apply` destination validation now uses `os.path.lexists` so broken symlinks/racing files are treated as existing and quarantined files are restored on failure.
 - Compatibility:
   - <python version changes, config changes>

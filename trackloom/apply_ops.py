@@ -43,20 +43,37 @@ def _paths_equivalent(left: Path, right: Path) -> bool:
     return left.resolve(strict=False) == right.resolve(strict=False)
 
 
-def _copy_with_atomic_replace(source: Path, destination: Path) -> None:
+def _path_lexists(path: Path) -> bool:
+    return os.path.lexists(str(path))
+
+
+def _copy_with_atomic_no_overwrite(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(
         prefix=".trackloom_tmp_", suffix=destination.suffix, dir=destination.parent
     )
     os.close(fd)
     tmp_path = Path(tmp_name)
+    placeholder_created = False
     try:
         shutil.copy2(source, tmp_path)
-        tmp_path.replace(destination)
+        try:
+            os.link(str(tmp_path), str(destination))
+            tmp_path.unlink()
+            return
+        except FileExistsError:
+            raise
+        except OSError:
+            fd_dest = os.open(str(destination), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd_dest)
+            placeholder_created = True
+            tmp_path.replace(destination)
     except Exception:
         try:
             if tmp_path.exists():
                 tmp_path.unlink()
+            if placeholder_created and _path_lexists(destination):
+                destination.unlink()
         except Exception:
             pass
         raise
@@ -98,13 +115,15 @@ def execute_operations(
             cleanup_mode == "move-to-quarantine"
             and action == "replace_in_b_with_a"
             and replace_target is not None
-            and replace_target.exists()
+            and _path_lexists(replace_target)
         )
         if action == "replace_in_b_with_a":
             if should_quarantine:
                 effective_dst = preferred_dst
             else:
-                effective_dst = preferred_dst if not preferred_dst.exists() else dst
+                effective_dst = (
+                    preferred_dst if not _path_lexists(preferred_dst) else dst
+                )
         else:
             effective_dst = dst
 
@@ -120,7 +139,7 @@ def execute_operations(
             if (
                 preferred_differs
                 and replace_target is not None
-                and replace_target.exists()
+                and _path_lexists(replace_target)
                 and cleanup_mode != "move-to-quarantine"
             ):
                 skipped.append(
@@ -139,7 +158,7 @@ def execute_operations(
                 and _paths_equivalent(effective_dst, replace_target)
             )
             destination_blocked = (
-                effective_dst.exists() and not will_clear_effective_dst
+                _path_lexists(effective_dst) and not will_clear_effective_dst
             )
             if destination_blocked:
                 skipped.append(
@@ -181,7 +200,7 @@ def execute_operations(
                 )
                 continue
 
-            _copy_with_atomic_replace(src, effective_dst)
+            _copy_with_atomic_no_overwrite(src, effective_dst)
             executed.append(
                 {
                     "operation": operation,
@@ -190,6 +209,31 @@ def execute_operations(
                     "status": "copied",
                 }
             )
+        except FileExistsError:
+            rollback_status = None
+            if (
+                quarantine_move
+                and quarantine_move.get("status") == "moved"
+                and replace_target is not None
+            ):
+                moved_to = Path(quarantine_move["to"])
+                try:
+                    if moved_to.exists() and not _path_lexists(replace_target):
+                        replace_target.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.move(str(moved_to), str(replace_target))
+                        rollback_status = "rolled_back"
+                except Exception:
+                    rollback_status = "rollback_failed"
+            skipped.append(
+                {
+                    "operation": operation,
+                    "effective_destination_path": str(effective_dst),
+                    "quarantine_move": quarantine_move,
+                    "quarantine_rollback": rollback_status,
+                    "reason": "destination_exists",
+                }
+            )
+            continue
         except Exception as err:
             rollback_status = None
             if (
@@ -199,7 +243,7 @@ def execute_operations(
             ):
                 moved_to = Path(quarantine_move["to"])
                 try:
-                    if moved_to.exists() and not replace_target.exists():
+                    if moved_to.exists() and not _path_lexists(replace_target):
                         replace_target.parent.mkdir(parents=True, exist_ok=True)
                         shutil.move(str(moved_to), str(replace_target))
                         rollback_status = "rolled_back"

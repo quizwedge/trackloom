@@ -223,6 +223,7 @@ def _pair_classification(
     file_a: ParsedAudioFile,
     file_b: ParsedAudioFile,
     duration_conflict_seconds: float,
+    close_duration_seconds: float,
 ) -> tuple[str, float | None, list[str]]:
     reasons = []
     hints_a: set[str] = set(file_a.version_hints)
@@ -241,7 +242,7 @@ def _pair_classification(
 
     if hints_a and hints_b and hints_a == hints_b:
         reasons.append("matching_version_hints")
-    if duration_diff is not None and duration_diff <= 8.0:
+    if duration_diff is not None and duration_diff <= close_duration_seconds:
         reasons.append("duration_close")
     return "likely_duplicate", duration_diff, reasons
 
@@ -250,9 +251,13 @@ def assess_duplicate_pair(
     file_a: ParsedAudioFile,
     file_b: ParsedAudioFile,
     duration_conflict_seconds: float = 5.0,
+    close_duration_seconds: float = 1.0,
 ) -> dict[str, Any]:
     classification, duration_diff, reasons = _pair_classification(
-        file_a, file_b, duration_conflict_seconds=duration_conflict_seconds
+        file_a,
+        file_b,
+        duration_conflict_seconds=duration_conflict_seconds,
+        close_duration_seconds=close_duration_seconds,
     )
     lossless_a = _is_lossless(file_a)
     lossless_b = _is_lossless(file_b)
@@ -379,7 +384,10 @@ def compare_collections(
         pairs, extras_a, extras_b = _pair_exact_candidates(a_items, b_items)
         for item_a, item_b in pairs:
             duplicate_policy = assess_duplicate_pair(
-                item_a, item_b, duration_conflict_seconds=duration_conflict_seconds
+                item_a,
+                item_b,
+                duration_conflict_seconds=duration_conflict_seconds,
+                close_duration_seconds=close_duration_seconds,
             )
             classification = duplicate_policy["classification"]
             if classification in duplicate_policy_counts:
@@ -455,7 +463,7 @@ def compare_collections(
                 rejection_reasons.append("song_similarity_below_min")
             if artist_sim < min_artist_similarity:
                 rejection_reasons.append("artist_similarity_below_min")
-            if duration_diff is not None and duration_diff > duration_conflict_seconds:
+            if duration_diff is not None and duration_diff >= duration_conflict_seconds:
                 rejection_reasons.append("duration_conflict")
 
             score = (song_sim * 0.5) + (duration_sim * 0.3) + (artist_sim * 0.2)
@@ -480,7 +488,10 @@ def compare_collections(
 
             if score >= fuzzy_threshold:
                 duplicate_policy = assess_duplicate_pair(
-                    item_a, item_b, duration_conflict_seconds=duration_conflict_seconds
+                    item_a,
+                    item_b,
+                    duration_conflict_seconds=duration_conflict_seconds,
+                    close_duration_seconds=close_duration_seconds,
                 )
                 # Fuzzy matches should be reviewed unless confidence rules are extended.
                 recommended_action = "manual_review"

@@ -248,6 +248,32 @@ class CompareCollectionsTests(unittest.TestCase):
         self.assertEqual(result["only_in_b_count"], 0)
         self.assertEqual(result["action_counts"]["add_to_b"], 0)
 
+    def test_fuzzy_rejects_duration_conflict_at_threshold(self):
+        a = make_file(
+            "A/Album/Believer.wav", "Imagine Dragons", "Evolve", "Believer", 200.0
+        )
+        b = make_file(
+            "B/Album/Beliver.mp3", "Imagine Dragon", "Evolve", "Beliver", 205.0
+        )
+
+        result = compare_collections(
+            [a],
+            [b],
+            fuzzy_threshold=0.0,
+            min_song_similarity=0.5,
+            min_artist_similarity=0.5,
+            close_duration_seconds=1.0,
+            duration_conflict_seconds=5.0,
+            top_k=10,
+        )
+
+        self.assertEqual(result["fuzzy_candidate_count"], 0)
+        self.assertGreaterEqual(result["fuzzy_rejection_count"], 1)
+        reasons = {
+            reason for item in result["fuzzy_rejections"] for reason in item["reasons"]
+        }
+        self.assertIn("duration_conflict", reasons)
+
     def test_exact_pairing_prefers_matching_version_hints(self):
         a_live = make_file(
             "A/Album/01 - Song Live.mp3", "Artist", "Album", "Song", 200.0

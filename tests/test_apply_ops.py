@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Dan Getz, Jr.
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -352,6 +353,58 @@ class ApplyOpsTests(unittest.TestCase):
             self.assertTrue(dst2.exists())
             self.assertFalse(dst1.exists())
             self.assertEqual(result["skipped"][0]["reason"], "io_error")
+
+    def test_execute_operations_skips_broken_symlink_destination(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src = root / "src" / "song.mp3"
+            dst = root / "dst" / "song.mp3"
+            src.parent.mkdir(parents=True)
+            dst.parent.mkdir(parents=True)
+            src.write_text("hello")
+            try:
+                dst.symlink_to(root / "missing.mp3")
+            except OSError:
+                self.skipTest("symlink not supported on this platform")
+
+            result = execute_operations(
+                [
+                    {
+                        "action": "add_to_b",
+                        "source_path": str(src),
+                        "destination_path": str(dst),
+                    }
+                ]
+            )
+
+            self.assertEqual(result["executed_count"], 0)
+            self.assertEqual(result["skipped_count"], 1)
+            self.assertEqual(result["skipped"][0]["reason"], "destination_exists")
+            self.assertTrue(os.path.lexists(dst))
+
+    def test_execute_operations_handles_racy_destination(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src = root / "src" / "song.mp3"
+            dst = root / "dst" / "song.mp3"
+            src.parent.mkdir(parents=True)
+            src.write_text("hello")
+
+            with patch("trackloom.apply_ops.os.link", side_effect=FileExistsError):
+                result = execute_operations(
+                    [
+                        {
+                            "action": "add_to_b",
+                            "source_path": str(src),
+                            "destination_path": str(dst),
+                        }
+                    ]
+                )
+
+            self.assertEqual(result["executed_count"], 0)
+            self.assertEqual(result["skipped_count"], 1)
+            self.assertEqual(result["skipped"][0]["reason"], "destination_exists")
+            self.assertFalse(dst.exists())
 
     def test_partial_copy_cleanup_does_not_leave_temp_or_destination(self):
         with tempfile.TemporaryDirectory() as tmp:

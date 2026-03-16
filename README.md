@@ -248,6 +248,11 @@ Safety guarantees:
 - plan JSON is validated: actions must be supported and paths must stay under `dir_a`/`dir_b`
 - plan JSON includes `schema_version` and newer versions are rejected
 
+## Safety improvements
+
+- EOF handling for `apply` and `review` prompts now cancels cleanly, writes any requested reports/decision files, and exits instead of crashing when stdin closes.
+- Destination checks now rely on `os.path.lexists`, preventing broken symlinks or racing creations from overwriting existing files and ensuring quarantine rollbacks restore the original path.
+
 Example reviewed workflow:
 
 ```bash
