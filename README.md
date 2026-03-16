@@ -43,6 +43,10 @@ Dev commands:
 - `python3 scripts/make_demo_data.py --force` (generate demo fixtures)
 - `python3 scripts/tune_synthetic_thresholds.py` (synthetic threshold tuning)
 - `python3 -m trackloom.cli help` (CLI help smoke check)
+- `make dev` (install dev dependencies)
+- `make lint` (run Ruff)
+- `make format` (apply Ruff formatting)
+- `make test` (run pytest)
 
 ## Usage
 
