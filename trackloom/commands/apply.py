@@ -26,10 +26,14 @@ EXIT_CANCELLED = 3
 
 def cmd_apply(args: Namespace) -> int:
     source_decisions_file = None
+    compare_settings = None
+    compare_settings_source = None
     if args.from_plan_json is not None:
         plan_payload = load_plan_json(args.from_plan_json)
         operations = plan_payload["operations"]
         source_decisions_file = plan_payload.get("source_decisions_file")
+        compare_settings = plan_payload.get("compare_settings")
+        compare_settings_source = "plan_json"
         effective_dir_a = str(plan_payload.get("dir_a") or args.dir_a)
         effective_dir_b = str(plan_payload.get("dir_b") or args.dir_b)
         validate_plan_operations(
@@ -40,6 +44,8 @@ def cmd_apply(args: Namespace) -> int:
     else:
         compare_config = CompareConfig.from_args(args)
         compare_config.validate()
+        compare_settings = compare_config.as_compare_kwargs()
+        compare_settings_source = "cli_args"
         extensions = normalize_extensions(args.extensions)
         files_a, files_b = collect_audio_pair(
             args.dir_a, args.dir_b, extensions, args.progress
@@ -160,6 +166,13 @@ def cmd_apply(args: Namespace) -> int:
         quarantine_dir=effective_quarantine_dir,
         dir_b=Path(effective_dir_b),
     )
+    compare_settings = compare_settings if isinstance(compare_settings, dict) else {}
+    def _compare_setting(name: str, fallback: float | int | None):
+        if name in compare_settings:
+            return compare_settings.get(name)
+        if args.from_plan_json is not None:
+            return None
+        return fallback
     payload = {
         "dir_a": effective_dir_a,
         "dir_b": effective_dir_b,
@@ -172,12 +185,18 @@ def cmd_apply(args: Namespace) -> int:
         "from_plan_json": str(args.from_plan_json) if args.from_plan_json else None,
         "run_metadata": {
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-            "fuzzy_threshold": args.fuzzy_threshold,
-            "close_duration_seconds": args.close_duration_seconds,
-            "duration_conflict_seconds": args.duration_conflict_seconds,
-            "min_song_sim": args.min_song_sim,
-            "min_artist_sim": args.min_artist_sim,
-            "top_k": args.top_k,
+            "fuzzy_threshold": _compare_setting("fuzzy_threshold", args.fuzzy_threshold),
+            "close_duration_seconds": _compare_setting(
+                "close_duration_seconds", args.close_duration_seconds
+            ),
+            "duration_conflict_seconds": _compare_setting(
+                "duration_conflict_seconds", args.duration_conflict_seconds
+            ),
+            "min_song_sim": _compare_setting("min_song_similarity", args.min_song_sim),
+            "min_artist_sim": _compare_setting(
+                "min_artist_similarity", args.min_artist_sim
+            ),
+            "top_k": _compare_setting("top_k", args.top_k),
             "yes": args.yes,
             "force": args.force,
             "mode": args.mode,
@@ -185,6 +204,8 @@ def cmd_apply(args: Namespace) -> int:
             "quarantine_dir": str(effective_quarantine_dir)
             if effective_quarantine_dir
             else None,
+            "compare_settings_source": compare_settings_source,
+            "compare_settings": compare_settings if compare_settings else None,
             "source_plan_json": str(args.from_plan_json)
             if args.from_plan_json
             else None,

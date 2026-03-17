@@ -137,6 +137,14 @@ class CliIntegrationSmokeTests(unittest.TestCase):
                 "dir_a": str(tmp / "A_plan"),
                 "dir_b": str(tmp / "B_plan"),
                 "schema_version": 1,
+                "compare_settings": {
+                    "fuzzy_threshold": 0.11,
+                    "close_duration_seconds": 0.25,
+                    "duration_conflict_seconds": 9.0,
+                    "min_song_similarity": 0.2,
+                    "min_artist_similarity": 0.3,
+                    "top_k": 7,
+                },
                 "operations": [
                     {
                         "action": "add_to_b",
@@ -175,6 +183,9 @@ class CliIntegrationSmokeTests(unittest.TestCase):
             payload = json.loads(out.stdout)
             self.assertEqual(payload["dir_a"], str(tmp / "A_plan"))
             self.assertEqual(payload["dir_b"], str(tmp / "B_plan"))
+            self.assertEqual(payload["run_metadata"]["fuzzy_threshold"], 0.11)
+            self.assertEqual(payload["run_metadata"]["top_k"], 7)
+            self.assertEqual(payload["run_metadata"]["compare_settings_source"], "plan_json")
 
 
 if __name__ == "__main__":

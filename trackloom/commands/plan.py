@@ -28,6 +28,7 @@ def cmd_plan(args: Namespace) -> int:
     plan_payload = apply_mode_to_plan_payload(
         plan_payload, args.mode, args.dir_a, args.dir_b, compare_payload=compare_result
     )
+    plan_payload["compare_settings"] = compare_config.as_compare_kwargs()
     plan_payload["schema_version"] = PLAN_SCHEMA_VERSION
 
     if args.write_plan_json is not None:

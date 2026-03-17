@@ -29,3 +29,4 @@
 - [0026: Normalize Ampersands/Punctuation and Block Fuzzy Matching](0026-normalization-and-fuzzy-blocking.md)
 - [0027: Default Cleanup Mode Moves Replaced Files to Quarantine](0027-default-quarantine-replace.md)
 - [0028: Use RapidFuzz for Text Similarity Scoring](0028-rapidfuzz-similarity.md)
+- [0029: Version Hints Favor High Recall](0029-version-hints-high-recall.md)

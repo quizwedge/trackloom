@@ -226,6 +226,7 @@ def cmd_review(args: Namespace) -> int:
     plan_payload = apply_mode_to_plan_payload(
         plan_payload, args.mode, args.dir_a, args.dir_b
     )
+    plan_payload["compare_settings"] = compare_config.as_compare_kwargs()
     plan_payload["manual_review_count"] = len(candidates)
     plan_payload["summary"] = review_summary
     plan_payload["schema_version"] = PLAN_SCHEMA_VERSION
