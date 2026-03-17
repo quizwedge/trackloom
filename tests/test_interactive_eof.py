@@ -81,6 +81,73 @@ class InteractiveEofTests(unittest.TestCase):
 
             self.assertEqual(result, APPLY_EXIT_CANCELLED)
 
+    def test_apply_prompt_uses_plan_dir_b(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plan_dir_a = root / "A_plan"
+            plan_dir_b = root / "B_plan"
+            cli_dir_a = root / "A_cli"
+            cli_dir_b = root / "B_cli"
+            src = plan_dir_a / "song.wav"
+            dst = plan_dir_b / "song.wav"
+            _write_wav(src, 1.0)
+            plan_dir_b.mkdir(parents=True, exist_ok=True)
+
+            plan_payload = {
+                "dir_a": str(plan_dir_a),
+                "dir_b": str(plan_dir_b),
+                "schema_version": 1,
+                "operations": [
+                    {
+                        "action": "add_to_b",
+                        "source_path": str(src),
+                        "source_relative_path": "song.wav",
+                        "destination_path": str(dst),
+                    }
+                ],
+                "counts": {"operations": 1},
+            }
+            plan_path = root / "plan.json"
+            plan_path.write_text(json.dumps(plan_payload), encoding="utf-8")
+
+            args = Namespace(
+                dir_a=cli_dir_a,
+                dir_b=cli_dir_b,
+                from_plan_json=plan_path,
+                extensions=[".wav"],
+                fuzzy_threshold=0.75,
+                close_duration_seconds=1.0,
+                duration_conflict_seconds=5.0,
+                min_song_sim=0.82,
+                min_artist_sim=0.65,
+                top_k=20,
+                mode="standard",
+                yes=False,
+                force=False,
+                cleanup_mode="move-to-quarantine",
+                quarantine_dir=None,
+                dry_run=True,
+                json=False,
+                report_json=None,
+                report_csv=None,
+                progress=False,
+            )
+
+            captured = {}
+
+            def fake_input(prompt):
+                captured["prompt"] = prompt
+                return "n"
+
+            with patch("builtins.input", side_effect=fake_input):
+                result = cmd_apply(args)
+
+            self.assertEqual(result, APPLY_EXIT_CANCELLED)
+            self.assertEqual(
+                captured.get("prompt"),
+                f"Apply 1 operation(s) to {plan_dir_b}? [y/N]: ",
+            )
+
     def test_review_cmd_eof_cancels(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -26,6 +26,7 @@ PUNCTUATION_RE = re.compile(r"[^\w\s]+", re.UNICODE)
 WHITESPACE_RE = re.compile(r"\s+")
 REMASTER_YEAR_AFTER_RE = re.compile(r"remaster(?:ed)?[^\d]{0,6}(\d{4})", re.IGNORECASE)
 REMASTER_YEAR_BEFORE_RE = re.compile(r"(\d{4})[^\w]{0,3}remaster(?:ed)?", re.IGNORECASE)
+DISC_FOLDER_RE = re.compile(r"^(?:cd|disc|disk|d)[\s_-]*\d+$", re.IGNORECASE)
 
 
 @dataclass
@@ -112,9 +113,17 @@ def parse_fields_from_path(file_path: Path, root_dir: Path) -> ParsedFields:
     album = None
 
     # Common shape: Artist/Album/Track.ext
+    # Also handle: Artist/Album/Disc/Track.ext (or Album/Disc/Track.ext)
     if len(parts) >= 3:
         artist = parts[-3]
         album = parts[-2]
+        if DISC_FOLDER_RE.match(album or ""):
+            if len(parts) >= 4:
+                artist = parts[-4]
+                album = parts[-3]
+            else:
+                artist = None
+                album = parts[-3]
     elif len(parts) == 2:
         album = parts[-2]
 

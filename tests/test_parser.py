@@ -60,6 +60,26 @@ class ParsePathFieldsTests(unittest.TestCase):
         self.assertEqual(parsed.album, "Album B")
         self.assertEqual(parsed.song, "Song C")
 
+    def test_parses_disc_folder_paths_with_artist_album(self) -> None:
+        root = Path("/library")
+        file_path = root / "Artist A" / "Album B" / "CD1" / "01 - Song C.mp3"
+
+        parsed = parser.parse_fields_from_path(file_path, root)
+
+        self.assertEqual(parsed.artist, "Artist A")
+        self.assertEqual(parsed.album, "Album B")
+        self.assertEqual(parsed.song, "Song C")
+
+    def test_parses_disc_folder_paths_without_artist(self) -> None:
+        root = Path("/library")
+        file_path = root / "Album B" / "Disc 2" / "01 - Song C.mp3"
+
+        parsed = parser.parse_fields_from_path(file_path, root)
+
+        self.assertIsNone(parsed.artist)
+        self.assertEqual(parsed.album, "Album B")
+        self.assertEqual(parsed.song, "Song C")
+
 
 class ParseTagFieldsTests(unittest.TestCase):
     def test_returns_none_fields_when_mutagen_unavailable(self) -> None:

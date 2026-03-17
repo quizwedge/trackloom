@@ -122,7 +122,9 @@ def cmd_apply(args: Namespace) -> int:
         eof = False
         try:
             response = (
-                input(f"Apply {len(operations)} operation(s) to {args.dir_b}? [y/N]: ")
+                input(
+                    f"Apply {len(operations)} operation(s) to {effective_dir_b}? [y/N]: "
+                )
                 .strip()
                 .lower()
             )
