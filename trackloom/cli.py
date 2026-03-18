@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .commands.apply import cmd_apply
 from .commands.compare import cmd_compare
+from .commands.doctor import cmd_doctor
 from .commands.parse import cmd_parse
 from .commands.plan import cmd_plan
 from .commands.review import cmd_review
@@ -431,7 +432,7 @@ def build_arg_parser(show_advanced: bool = False) -> argparse.ArgumentParser:
     help_cmd.add_argument(
         "topic",
         nargs="?",
-        choices=["parse", "compare", "plan", "apply", "review"],
+        choices=["parse", "compare", "plan", "apply", "review", "doctor"],
         help="Optional command to show detailed help for",
     )
     help_adv_cmd = subparsers.add_parser(
@@ -440,8 +441,17 @@ def build_arg_parser(show_advanced: bool = False) -> argparse.ArgumentParser:
     help_adv_cmd.add_argument(
         "topic",
         nargs="?",
-        choices=["parse", "compare", "plan", "apply", "review"],
+        choices=["parse", "compare", "plan", "apply", "review", "doctor"],
         help="Optional command to show detailed help for",
+    )
+    doctor_cmd = subparsers.add_parser(
+        "doctor",
+        help="Check environment and dependency health.",
+    )
+    doctor_cmd.add_argument(
+        "--json",
+        action="store_true",
+        help="Print results as JSON",
     )
     return parser
 
@@ -463,6 +473,8 @@ def main() -> int:
             return cmd_apply(args)
         if args.command == "review":
             return cmd_review(args)
+        if args.command == "doctor":
+            return cmd_doctor(args)
         if args.command == "help":
             if args.topic:
                 subparser = _find_subparser(parser, args.topic)

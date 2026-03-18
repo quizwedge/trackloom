@@ -17,6 +17,7 @@ from .common import (
     collect_audio_pair,
     compare_payload,
     normalize_extensions,
+    print_ab_header,
     print_apply_change_summary,
     validate_directory,
 )
@@ -116,6 +117,7 @@ def cmd_apply(args: Namespace) -> int:
         if args.json:
             print(json.dumps(result, indent=2))
         else:
+            print_ab_header("Apply", Path(effective_dir_a), Path(effective_dir_b))
             print("No operations to apply.")
             print(
                 "Defaults: no overwrites, no deletes, cleanup=move-to-quarantine "
@@ -135,6 +137,7 @@ def cmd_apply(args: Namespace) -> int:
         effective_quarantine_dir = Path(effective_dir_b) / ".trackloom_quarantine"
 
     if not args.json:
+        print_ab_header("Apply", Path(effective_dir_a), Path(effective_dir_b))
         print_apply_change_summary(operations, effective_dir_b)
         print(
             "Defaults: no overwrites, no deletes, cleanup=move-to-quarantine "

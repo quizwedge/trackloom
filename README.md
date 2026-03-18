@@ -70,6 +70,7 @@ trackloom compare /path/to/library_a /path/to/library_b
 trackloom plan /path/to/library_a /path/to/library_b
 trackloom apply /path/to/library_a /path/to/library_b
 trackloom review /path/to/library_a /path/to/library_b
+trackloom doctor
 trackloom help
 trackloom help parse
 trackloom help compare

@@ -9,6 +9,7 @@ from ..parser import collect_audio_metadata
 from .common import (
     make_progress_callback,
     normalize_extensions,
+    print_ab_header,
     print_parsed_items,
     validate_directory,
 )
@@ -50,6 +51,7 @@ def cmd_parse(args: Namespace) -> int:
         print(json.dumps(payload, indent=2))
         return 0
 
+    print_ab_header("Parse", args.dir_a, args.dir_b)
     print_parsed_items("A", args.dir_a, left)
     if args.dir_b is not None:
         print_parsed_items("B", args.dir_b, right)

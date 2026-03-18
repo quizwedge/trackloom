@@ -10,6 +10,7 @@ from .common import (
     collect_audio_pair,
     compare_payload,
     normalize_extensions,
+    print_ab_header,
     print_next_plan_hints,
     validate_directory,
 )
@@ -32,7 +33,7 @@ def cmd_compare(args: Namespace) -> int:
         print(json.dumps(payload, indent=2))
         return 0
 
-    print(f"Compared A={args.dir_a} vs B={args.dir_b}")
+    print_ab_header("Compare", args.dir_a, args.dir_b)
     print(
         f"Exact matches: {payload['exact_match_count']} | "
         f"Only in A: {payload['only_in_a_count']} | "

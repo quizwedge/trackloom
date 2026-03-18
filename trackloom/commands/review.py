@@ -19,6 +19,7 @@ from .common import (
     collect_audio_pair,
     compare_payload,
     normalize_extensions,
+    print_ab_header,
     print_next_apply_hints,
     validate_directory,
 )
@@ -107,6 +108,7 @@ def cmd_review(args: Namespace) -> int:
         if args.json:
             print(json.dumps(empty_payload, indent=2))
         else:
+            print_ab_header("Review", args.dir_a, args.dir_b)
             print("No manual review items found.")
             if args.write_plan_json is not None:
                 print(f"Reviewed plan saved to: {args.write_plan_json}")
@@ -115,6 +117,7 @@ def cmd_review(args: Namespace) -> int:
                 print(f"Manual review export: {args.export_manual_review_json}")
         return EXIT_SUCCESS
 
+    print_ab_header("Review", args.dir_a, args.dir_b)
     print(f"Manual review items: {len(candidates)}")
     print(
         f"Summary: exact={review_summary['source_counts'].get('exact', 0)} "

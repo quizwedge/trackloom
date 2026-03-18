@@ -13,6 +13,7 @@ from .common import (
     collect_audio_pair,
     compare_payload,
     normalize_extensions,
+    print_ab_header,
     print_next_apply_hints,
     print_next_review_hints,
     validate_directory,
@@ -44,7 +45,7 @@ def cmd_plan(args: Namespace) -> int:
         return 0
 
     counts = plan_payload["counts"]
-    print(f"Plan for A={args.dir_a} -> B={args.dir_b}")
+    print_ab_header("Plan", args.dir_a, args.dir_b)
     print(
         f"Operations: {counts['operations']} "
         f"(add_to_b={counts['add_to_b']}, "

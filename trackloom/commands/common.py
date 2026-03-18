@@ -21,6 +21,13 @@ def validate_directory(path: Path, label: str) -> None:
         raise ValueError(f"{label} is not a directory: {path}")
 
 
+def print_ab_header(label: str, dir_a: Path, dir_b: Path | None = None) -> None:
+    if dir_b is None:
+        print(f"{label} A={dir_a}")
+    else:
+        print(f"{label} A={dir_a} B={dir_b}")
+
+
 def make_progress_callback(label: str):
     def _callback(current: int, total: int, _: Path) -> None:
         print(
