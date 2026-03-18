@@ -78,6 +78,7 @@ trackloom help apply
 trackloom help review
 trackloom help-advanced
 trackloom help-advanced compare
+trackloom help-advanced plan
 ```
 
 Demo fixtures:

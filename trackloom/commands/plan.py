@@ -77,6 +77,10 @@ def cmd_plan(args: Namespace) -> int:
                 "--write-plan-json plan.json"
             )
             print(
+                f"  trackloom plan {args.dir_a} {args.dir_b} "
+                "--write-plan-json plan.json --json"
+            )
+            print(
                 f"  trackloom apply {args.dir_a} {args.dir_b} "
                 "--from-plan-json plan.json --dry-run"
             )

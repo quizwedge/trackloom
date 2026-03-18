@@ -129,6 +129,7 @@ def print_next_plan_hints(
     plan_target = plan_path or Path("plan.json")
     print("Next commands:")
     print(f"  trackloom plan {dir_a} {dir_b} --write-plan-json {plan_target}")
+    print(f"  trackloom plan {dir_a} {dir_b} --write-plan-json {plan_target} --json")
 
 
 def print_next_review_hints(
@@ -141,6 +142,11 @@ def print_next_review_hints(
         f"  trackloom review {dir_a} {dir_b} "
         f"--decisions-file {decisions_target} "
         f"--write-plan-json {plan_target}"
+    )
+    print(
+        f"  trackloom review {dir_a} {dir_b} "
+        f"--decisions-file {decisions_target} "
+        f"--write-plan-json {plan_target} --json"
     )
 
 
