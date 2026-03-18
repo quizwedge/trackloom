@@ -42,6 +42,15 @@ def build_arg_parser(show_advanced: bool = False) -> argparse.ArgumentParser:
         prog="trackloom",
         description="Compare audio files in two directories (step 1: parsing fields).",
     )
+    parser.epilog = (
+        "Happy path:\n"
+        "  trackloom compare A B --json > /tmp/compare.json\n"
+        "  trackloom plan A B --write-plan-json /tmp/plan.json\n"
+        "  trackloom review A B --decisions-file /tmp/decisions.json "
+        "--write-plan-json /tmp/reviewed-plan.json\n"
+        "  trackloom apply A B --from-plan-json /tmp/reviewed-plan.json --dry-run\n"
+        "Tip: use 'trackloom help-advanced <command>' for tuning options."
+    )
     subparsers = parser.add_subparsers(dest="command", required=False)
 
     parse_cmd = subparsers.add_parser(

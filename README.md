@@ -81,6 +81,16 @@ trackloom help-advanced compare
 trackloom help-advanced plan
 ```
 
+Happy path (safe defaults):
+
+```bash
+trackloom compare /path/to/A /path/to/B --json > /tmp/compare.json
+trackloom plan /path/to/A /path/to/B --write-plan-json /tmp/plan.json
+trackloom review /path/to/A /path/to/B --decisions-file /tmp/decisions.json \
+  --write-plan-json /tmp/reviewed-plan.json
+trackloom apply /path/to/A /path/to/B --from-plan-json /tmp/reviewed-plan.json --dry-run
+```
+
 Demo fixtures:
 
 ```bash

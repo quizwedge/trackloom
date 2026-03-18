@@ -101,6 +101,15 @@ def cmd_apply(args: Namespace) -> int:
             print(json.dumps(result, indent=2))
         else:
             print("No operations to apply.")
+            print(
+                "Defaults: no overwrites, no deletes, cleanup=move-to-quarantine "
+                "(only for replace_in_b_with_a)."
+            )
+            if args.from_plan_json is None:
+                print(
+                    "Tip: run 'trackloom plan A B --write-plan-json plan.json' first "
+                    "for safer review and apply."
+                )
             if args.report_json is not None:
                 print(f"Report JSON: {args.report_json}")
         return EXIT_SUCCESS
@@ -111,6 +120,10 @@ def cmd_apply(args: Namespace) -> int:
 
     if not args.json:
         print_apply_change_summary(operations, effective_dir_b)
+        print(
+            "Defaults: no overwrites, no deletes, cleanup=move-to-quarantine "
+            "(only for replace_in_b_with_a)."
+        )
 
     if args.yes and not args.dry_run and not args.force:
         eof = False
@@ -144,6 +157,11 @@ def cmd_apply(args: Namespace) -> int:
                 print(json.dumps(cancelled_payload, indent=2))
             else:
                 print(f"{message} No changes applied.")
+                if args.from_plan_json is None:
+                    print(
+                        "Tip: run 'trackloom plan A B --write-plan-json plan.json' "
+                        "to capture a safe plan for reuse."
+                    )
             return EXIT_CANCELLED
 
     if not args.yes:
@@ -179,6 +197,11 @@ def cmd_apply(args: Namespace) -> int:
                 print(f"{message} No changes applied.")
                 if args.report_json is not None:
                     print(f"Report JSON: {args.report_json}")
+                if args.from_plan_json is None:
+                    print(
+                        "Tip: run 'trackloom plan A B --write-plan-json plan.json' "
+                        "to capture a safe plan for reuse."
+                    )
             return EXIT_CANCELLED
 
     exec_result = execute_operations(
