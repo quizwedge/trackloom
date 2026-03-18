@@ -123,6 +123,27 @@ def print_next_apply_hints(dir_a: Path, dir_b: Path, plan_path: Path) -> None:
     print(f"  trackloom apply {dir_a} {dir_b} --from-plan-json {plan_path} --yes")
 
 
+def print_next_plan_hints(
+    dir_a: Path, dir_b: Path, plan_path: Path | None = None
+) -> None:
+    plan_target = plan_path or Path("plan.json")
+    print("Next commands:")
+    print(f"  trackloom plan {dir_a} {dir_b} --write-plan-json {plan_target}")
+
+
+def print_next_review_hints(
+    dir_a: Path, dir_b: Path, decisions_path: Path | None = None
+) -> None:
+    decisions_target = decisions_path or Path("decisions.json")
+    plan_target = Path("reviewed-plan.json")
+    print("Next commands:")
+    print(
+        f"  trackloom review {dir_a} {dir_b} "
+        f"--decisions-file {decisions_target} "
+        f"--write-plan-json {plan_target}"
+    )
+
+
 def print_apply_change_summary(operations: list[dict], dir_b: str) -> None:
     action_counts = {}
     destinations = []

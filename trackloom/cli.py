@@ -30,7 +30,14 @@ def _find_subparser(
     return None
 
 
-def build_arg_parser() -> argparse.ArgumentParser:
+def _advanced_help(help_text: str, show_advanced: bool) -> str:
+    return help_text if show_advanced else argparse.SUPPRESS
+
+
+def build_arg_parser(show_advanced: bool = False) -> argparse.ArgumentParser:
+    def adv(help_text: str) -> str:
+        return _advanced_help(help_text, show_advanced)
+
     parser = argparse.ArgumentParser(
         prog="trackloom",
         description="Compare audio files in two directories (step 1: parsing fields).",
@@ -57,7 +64,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--extensions",
         nargs="+",
         default=sorted(SUPPORTED_EXTENSIONS),
-        help="Audio extensions to scan (ex: .mp3 .flac .m4a)",
+        help=adv("Audio extensions to scan (ex: .mp3 .flac .m4a)"),
     )
     parse_cmd.add_argument(
         "--json",
@@ -80,43 +87,43 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--extensions",
         nargs="+",
         default=sorted(SUPPORTED_EXTENSIONS),
-        help="Audio extensions to scan (ex: .mp3 .flac .m4a)",
+        help=adv("Audio extensions to scan (ex: .mp3 .flac .m4a)"),
     )
     compare_cmd.add_argument(
         "--fuzzy-threshold",
         type=float,
         default=0.75,
-        help="Minimum fuzzy score to include a candidate (0.0-1.0)",
+        help=adv("Minimum fuzzy score to include a candidate (0.0-1.0)"),
     )
     compare_cmd.add_argument(
         "--close-duration-seconds",
         type=float,
         default=1.0,
-        help="Duration considered close for fuzzy scoring",
+        help=adv("Duration considered close for fuzzy scoring"),
     )
     compare_cmd.add_argument(
         "--duration-conflict-seconds",
         type=float,
         default=5.0,
-        help="Duration difference above this is a conflict",
+        help=adv("Duration difference above this is a conflict"),
     )
     compare_cmd.add_argument(
         "--min-song-sim",
         type=float,
         default=0.82,
-        help="Minimum song similarity to consider fuzzy candidate",
+        help=adv("Minimum song similarity to consider fuzzy candidate"),
     )
     compare_cmd.add_argument(
         "--min-artist-sim",
         type=float,
         default=0.65,
-        help="Minimum artist similarity to consider fuzzy candidate",
+        help=adv("Minimum artist similarity to consider fuzzy candidate"),
     )
     compare_cmd.add_argument(
         "--top-k",
         type=int,
         default=20,
-        help="Maximum fuzzy candidates to include in output",
+        help=adv("Maximum fuzzy candidates to include in output"),
     )
     compare_cmd.add_argument(
         "--json",
@@ -139,43 +146,43 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--extensions",
         nargs="+",
         default=sorted(SUPPORTED_EXTENSIONS),
-        help="Audio extensions to scan (ex: .mp3 .flac .m4a)",
+        help=adv("Audio extensions to scan (ex: .mp3 .flac .m4a)"),
     )
     plan_cmd.add_argument(
         "--fuzzy-threshold",
         type=float,
         default=0.75,
-        help="Minimum fuzzy score to include a candidate (0.0-1.0)",
+        help=adv("Minimum fuzzy score to include a candidate (0.0-1.0)"),
     )
     plan_cmd.add_argument(
         "--close-duration-seconds",
         type=float,
         default=1.0,
-        help="Duration considered close for fuzzy scoring",
+        help=adv("Duration considered close for fuzzy scoring"),
     )
     plan_cmd.add_argument(
         "--duration-conflict-seconds",
         type=float,
         default=5.0,
-        help="Duration difference above this is a conflict",
+        help=adv("Duration difference above this is a conflict"),
     )
     plan_cmd.add_argument(
         "--min-song-sim",
         type=float,
         default=0.82,
-        help="Minimum song similarity to consider fuzzy candidate",
+        help=adv("Minimum song similarity to consider fuzzy candidate"),
     )
     plan_cmd.add_argument(
         "--min-artist-sim",
         type=float,
         default=0.65,
-        help="Minimum artist similarity to consider fuzzy candidate",
+        help=adv("Minimum artist similarity to consider fuzzy candidate"),
     )
     plan_cmd.add_argument(
         "--top-k",
         type=int,
         default=20,
-        help="Maximum fuzzy candidates to include in output",
+        help=adv("Maximum fuzzy candidates to include in output"),
     )
     plan_cmd.add_argument(
         "--mode",
@@ -216,43 +223,43 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--extensions",
         nargs="+",
         default=sorted(SUPPORTED_EXTENSIONS),
-        help="Audio extensions to scan (ex: .mp3 .flac .m4a)",
+        help=adv("Audio extensions to scan (ex: .mp3 .flac .m4a)"),
     )
     apply_cmd.add_argument(
         "--fuzzy-threshold",
         type=float,
         default=0.75,
-        help="Minimum fuzzy score to include a candidate (0.0-1.0)",
+        help=adv("Minimum fuzzy score to include a candidate (0.0-1.0)"),
     )
     apply_cmd.add_argument(
         "--close-duration-seconds",
         type=float,
         default=1.0,
-        help="Duration considered close for fuzzy scoring",
+        help=adv("Duration considered close for fuzzy scoring"),
     )
     apply_cmd.add_argument(
         "--duration-conflict-seconds",
         type=float,
         default=5.0,
-        help="Duration difference above this is a conflict",
+        help=adv("Duration difference above this is a conflict"),
     )
     apply_cmd.add_argument(
         "--min-song-sim",
         type=float,
         default=0.82,
-        help="Minimum song similarity to consider fuzzy candidate",
+        help=adv("Minimum song similarity to consider fuzzy candidate"),
     )
     apply_cmd.add_argument(
         "--min-artist-sim",
         type=float,
         default=0.65,
-        help="Minimum artist similarity to consider fuzzy candidate",
+        help=adv("Minimum artist similarity to consider fuzzy candidate"),
     )
     apply_cmd.add_argument(
         "--top-k",
         type=int,
         default=20,
-        help="Maximum fuzzy candidates to include in output",
+        help=adv("Maximum fuzzy candidates to include in output"),
     )
     apply_cmd.add_argument(
         "--mode",
@@ -320,43 +327,43 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--extensions",
         nargs="+",
         default=sorted(SUPPORTED_EXTENSIONS),
-        help="Audio extensions to scan (ex: .mp3 .flac .m4a)",
+        help=adv("Audio extensions to scan (ex: .mp3 .flac .m4a)"),
     )
     review_cmd.add_argument(
         "--fuzzy-threshold",
         type=float,
         default=0.75,
-        help="Minimum fuzzy score to include a candidate (0.0-1.0)",
+        help=adv("Minimum fuzzy score to include a candidate (0.0-1.0)"),
     )
     review_cmd.add_argument(
         "--close-duration-seconds",
         type=float,
         default=1.0,
-        help="Duration considered close for fuzzy scoring",
+        help=adv("Duration considered close for fuzzy scoring"),
     )
     review_cmd.add_argument(
         "--duration-conflict-seconds",
         type=float,
         default=5.0,
-        help="Duration difference above this is a conflict",
+        help=adv("Duration difference above this is a conflict"),
     )
     review_cmd.add_argument(
         "--min-song-sim",
         type=float,
         default=0.82,
-        help="Minimum song similarity to consider fuzzy candidate",
+        help=adv("Minimum song similarity to consider fuzzy candidate"),
     )
     review_cmd.add_argument(
         "--min-artist-sim",
         type=float,
         default=0.65,
-        help="Minimum artist similarity to consider fuzzy candidate",
+        help=adv("Minimum artist similarity to consider fuzzy candidate"),
     )
     review_cmd.add_argument(
         "--top-k",
         type=int,
         default=20,
-        help="Maximum fuzzy candidates to include in output",
+        help=adv("Maximum fuzzy candidates to include in output"),
     )
     review_cmd.add_argument(
         "--mode",
@@ -418,6 +425,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
         choices=["parse", "compare", "plan", "apply", "review"],
         help="Optional command to show detailed help for",
     )
+    help_adv_cmd = subparsers.add_parser(
+        "help-advanced", help="Show advanced help for commands."
+    )
+    help_adv_cmd.add_argument(
+        "topic",
+        nargs="?",
+        choices=["parse", "compare", "plan", "apply", "review"],
+        help="Optional command to show detailed help for",
+    )
     return parser
 
 
@@ -445,6 +461,15 @@ def main() -> int:
                     subparser.print_help()
                     return 0
             parser.print_help()
+            return 0
+        if args.command == "help-advanced":
+            advanced_parser = build_arg_parser(show_advanced=True)
+            if args.topic:
+                subparser = _find_subparser(advanced_parser, args.topic)
+                if subparser is not None:
+                    subparser.print_help()
+                    return 0
+            advanced_parser.print_help()
             return 0
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)

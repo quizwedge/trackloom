@@ -6,7 +6,12 @@ import json
 from argparse import Namespace
 
 from ..config import CompareConfig
-from .common import collect_audio_pair, compare_payload, normalize_extensions
+from .common import (
+    collect_audio_pair,
+    compare_payload,
+    normalize_extensions,
+    print_next_plan_hints,
+)
 
 
 def cmd_compare(args: Namespace) -> int:
@@ -62,4 +67,5 @@ def cmd_compare(args: Namespace) -> int:
         )
     if payload.get("fuzzy_rejection_count"):
         print(f"Fuzzy rejections logged: {payload['fuzzy_rejection_count']}")
+    print_next_plan_hints(args.dir_a, args.dir_b)
     return 0

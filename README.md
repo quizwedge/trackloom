@@ -76,6 +76,8 @@ trackloom help compare
 trackloom help plan
 trackloom help apply
 trackloom help review
+trackloom help-advanced
+trackloom help-advanced compare
 ```
 
 Demo fixtures:
@@ -133,6 +135,9 @@ Optional flags:
 - `--extensions .mp3 .flac .m4a .ogg .wav`
 - `--json` to emit machine-readable JSON
 - `--progress` to show live scan progress on stderr
+
+Advanced tuning flags are hidden from the default help output.
+Use `trackloom help-advanced <command>` to see full option lists.
 
 `compare` also supports:
 
@@ -226,7 +231,7 @@ trackloom plan /path/to/A /path/to/B --mode plex --json > /tmp/plan-plex.json
 - use `--yes` to auto-apply without prompt
 - with `--yes` and real writes, an extra safeguard confirmation is required unless `--force` is set
 - use `--dry-run` to simulate copy operations with no writes
-- use `--from-plan-json <file>` to apply a previously saved `plan --json` result
+- recommended: use `--from-plan-json <file>` from a saved plan or reviewed plan
 - use `--report-json <file>` to save a full run report
 - use `--report-csv <file>` to save per-operation results
 - cleanup mode (default `move-to-quarantine`):

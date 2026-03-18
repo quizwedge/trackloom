@@ -13,6 +13,8 @@ from .common import (
     collect_audio_pair,
     compare_payload,
     normalize_extensions,
+    print_next_apply_hints,
+    print_next_review_hints,
 )
 
 
@@ -60,4 +62,22 @@ def cmd_plan(args: Namespace) -> int:
         )
     if len(plan_payload["operations"]) > 20:
         print(f"... {len(plan_payload['operations']) - 20} more operations")
+    manual_review_count = compare_result["action_counts"].get("manual_review", 0)
+    if manual_review_count:
+        print(f"Manual review items detected: {manual_review_count}")
+        print_next_review_hints(args.dir_a, args.dir_b)
+    else:
+        if args.write_plan_json is not None:
+            print_next_apply_hints(args.dir_a, args.dir_b, args.write_plan_json)
+        else:
+            print("Tip: re-run with --write-plan-json plan.json to apply safely later.")
+            print("Next commands:")
+            print(
+                f"  trackloom plan {args.dir_a} {args.dir_b} "
+                "--write-plan-json plan.json"
+            )
+            print(
+                f"  trackloom apply {args.dir_a} {args.dir_b} "
+                "--from-plan-json plan.json --dry-run"
+            )
     return 0
