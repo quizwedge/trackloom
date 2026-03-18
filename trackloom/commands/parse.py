@@ -6,10 +6,18 @@ import json
 from argparse import Namespace
 
 from ..parser import collect_audio_metadata
-from .common import make_progress_callback, normalize_extensions, print_parsed_items
+from .common import (
+    make_progress_callback,
+    normalize_extensions,
+    print_parsed_items,
+    validate_directory,
+)
 
 
 def cmd_parse(args: Namespace) -> int:
+    validate_directory(args.dir_a, "dir_a")
+    if args.dir_b is not None:
+        validate_directory(args.dir_b, "dir_b")
     extensions = normalize_extensions(args.extensions)
     left_progress = make_progress_callback("A") if args.progress else None
     left = collect_audio_metadata(

@@ -20,6 +20,7 @@ from .common import (
     compare_payload,
     normalize_extensions,
     print_next_apply_hints,
+    validate_directory,
 )
 
 EXIT_SUCCESS = 0
@@ -28,6 +29,8 @@ EXIT_CANCELLED = 3
 
 
 def cmd_review(args: Namespace) -> int:
+    validate_directory(args.dir_a, "dir_a")
+    validate_directory(args.dir_b, "dir_b")
     compare_config = CompareConfig.from_args(args)
     compare_config.validate()
     if args.page_size <= 0:

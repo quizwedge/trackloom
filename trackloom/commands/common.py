@@ -14,6 +14,13 @@ def normalize_extensions(extensions: list[str]) -> set[str]:
     return {ext if ext.startswith(".") else f".{ext}" for ext in extensions}
 
 
+def validate_directory(path: Path, label: str) -> None:
+    if not path.exists():
+        raise ValueError(f"{label} does not exist: {path}")
+    if not path.is_dir():
+        raise ValueError(f"{label} is not a directory: {path}")
+
+
 def make_progress_callback(label: str):
     def _callback(current: int, total: int, _: Path) -> None:
         print(

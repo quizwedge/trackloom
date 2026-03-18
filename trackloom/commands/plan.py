@@ -15,10 +15,13 @@ from .common import (
     normalize_extensions,
     print_next_apply_hints,
     print_next_review_hints,
+    validate_directory,
 )
 
 
 def cmd_plan(args: Namespace) -> int:
+    validate_directory(args.dir_a, "dir_a")
+    validate_directory(args.dir_b, "dir_b")
     compare_config = CompareConfig.from_args(args)
     compare_config.validate()
     extensions = normalize_extensions(args.extensions)

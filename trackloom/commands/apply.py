@@ -18,6 +18,7 @@ from .common import (
     compare_payload,
     normalize_extensions,
     print_apply_change_summary,
+    validate_directory,
 )
 
 EXIT_SUCCESS = 0
@@ -49,7 +50,18 @@ def cmd_apply(args: Namespace) -> int:
                 return {}, True
         return normalized, False
     if args.from_plan_json is not None:
-        plan_payload = load_plan_json(args.from_plan_json)
+        if not args.from_plan_json.exists():
+            raise ValueError(
+                "Plan JSON not found: "
+                f"{args.from_plan_json}. "
+                "Tip: run 'trackloom plan A B --write-plan-json plan.json' first."
+            )
+        if not args.from_plan_json.is_file():
+            raise ValueError(f"Plan JSON path is not a file: {args.from_plan_json}")
+        try:
+            plan_payload = load_plan_json(args.from_plan_json)
+        except ValueError as exc:
+            raise ValueError(f"Invalid plan JSON: {exc}") from exc
         operations = plan_payload["operations"]
         source_decisions_file = plan_payload.get("source_decisions_file")
         compare_settings, compare_invalid = _normalize_compare_settings(
@@ -58,12 +70,16 @@ def cmd_apply(args: Namespace) -> int:
         compare_settings_source = "plan_json_invalid" if compare_invalid else "plan_json"
         effective_dir_a = str(plan_payload.get("dir_a") or args.dir_a)
         effective_dir_b = str(plan_payload.get("dir_b") or args.dir_b)
+        validate_directory(Path(effective_dir_a), "plan dir_a")
+        validate_directory(Path(effective_dir_b), "plan dir_b")
         validate_plan_operations(
             operations,
             Path(effective_dir_a),
             Path(effective_dir_b),
         )
     else:
+        validate_directory(args.dir_a, "dir_a")
+        validate_directory(args.dir_b, "dir_b")
         compare_config = CompareConfig.from_args(args)
         compare_config.validate()
         compare_settings = compare_config.as_compare_kwargs()

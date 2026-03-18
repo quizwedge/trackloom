@@ -11,10 +11,13 @@ from .common import (
     compare_payload,
     normalize_extensions,
     print_next_plan_hints,
+    validate_directory,
 )
 
 
 def cmd_compare(args: Namespace) -> int:
+    validate_directory(args.dir_a, "dir_a")
+    validate_directory(args.dir_b, "dir_b")
     compare_config = CompareConfig.from_args(args)
     compare_config.validate()
     extensions = normalize_extensions(args.extensions)
