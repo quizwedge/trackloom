@@ -28,12 +28,34 @@ def cmd_apply(args: Namespace) -> int:
     source_decisions_file = None
     compare_settings = None
     compare_settings_source = None
+    def _normalize_compare_settings(raw: object) -> tuple[dict[str, float | int], bool]:
+        if not isinstance(raw, dict):
+            return {}, True
+        expected = {
+            "fuzzy_threshold": float,
+            "close_duration_seconds": float,
+            "duration_conflict_seconds": float,
+            "min_song_similarity": float,
+            "min_artist_similarity": float,
+            "top_k": int,
+        }
+        normalized: dict[str, float | int] = {}
+        for key, caster in expected.items():
+            if key not in raw:
+                return {}, True
+            try:
+                normalized[key] = caster(raw[key])
+            except (TypeError, ValueError):
+                return {}, True
+        return normalized, False
     if args.from_plan_json is not None:
         plan_payload = load_plan_json(args.from_plan_json)
         operations = plan_payload["operations"]
         source_decisions_file = plan_payload.get("source_decisions_file")
-        compare_settings = plan_payload.get("compare_settings")
-        compare_settings_source = "plan_json"
+        compare_settings, compare_invalid = _normalize_compare_settings(
+            plan_payload.get("compare_settings")
+        )
+        compare_settings_source = "plan_json_invalid" if compare_invalid else "plan_json"
         effective_dir_a = str(plan_payload.get("dir_a") or args.dir_a)
         effective_dir_b = str(plan_payload.get("dir_b") or args.dir_b)
         validate_plan_operations(

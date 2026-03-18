@@ -113,17 +113,13 @@ def parse_fields_from_path(file_path: Path, root_dir: Path) -> ParsedFields:
     album = None
 
     # Common shape: Artist/Album/Track.ext
-    # Also handle: Artist/Album/Disc/Track.ext (or Album/Disc/Track.ext)
+    # Also handle: Artist/Album/Disc/Track.ext
     if len(parts) >= 3:
         artist = parts[-3]
         album = parts[-2]
-        if DISC_FOLDER_RE.match(album or ""):
-            if len(parts) >= 4:
-                artist = parts[-4]
-                album = parts[-3]
-            else:
-                artist = None
-                album = parts[-3]
+        if len(parts) >= 4 and DISC_FOLDER_RE.match(album or ""):
+            artist = parts[-4]
+            album = parts[-3]
     elif len(parts) == 2:
         album = parts[-2]
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 from .commands.apply import cmd_apply
@@ -426,24 +427,28 @@ def main() -> int:
     if args.command is None:
         parser.print_help()
         return 0
-    if args.command == "parse":
-        return cmd_parse(args)
-    if args.command == "compare":
-        return cmd_compare(args)
-    if args.command == "plan":
-        return cmd_plan(args)
-    if args.command == "apply":
-        return cmd_apply(args)
-    if args.command == "review":
-        return cmd_review(args)
-    if args.command == "help":
-        if args.topic:
-            subparser = _find_subparser(parser, args.topic)
-            if subparser is not None:
-                subparser.print_help()
-                return 0
-        parser.print_help()
-        return 0
+    try:
+        if args.command == "parse":
+            return cmd_parse(args)
+        if args.command == "compare":
+            return cmd_compare(args)
+        if args.command == "plan":
+            return cmd_plan(args)
+        if args.command == "apply":
+            return cmd_apply(args)
+        if args.command == "review":
+            return cmd_review(args)
+        if args.command == "help":
+            if args.topic:
+                subparser = _find_subparser(parser, args.topic)
+                if subparser is not None:
+                    subparser.print_help()
+                    return 0
+            parser.print_help()
+            return 0
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return EXIT_BLOCKED
     parser.error(f"Unknown command: {args.command}")
     return 2
 

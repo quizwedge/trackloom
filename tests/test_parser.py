@@ -70,14 +70,14 @@ class ParsePathFieldsTests(unittest.TestCase):
         self.assertEqual(parsed.album, "Album B")
         self.assertEqual(parsed.song, "Song C")
 
-    def test_parses_disc_folder_paths_without_artist(self) -> None:
+    def test_disc_folder_requires_artist_album_depth(self) -> None:
         root = Path("/library")
         file_path = root / "Album B" / "Disc 2" / "01 - Song C.mp3"
 
         parsed = parser.parse_fields_from_path(file_path, root)
 
-        self.assertIsNone(parsed.artist)
-        self.assertEqual(parsed.album, "Album B")
+        self.assertEqual(parsed.artist, "Album B")
+        self.assertEqual(parsed.album, "Disc 2")
         self.assertEqual(parsed.song, "Song C")
 
 

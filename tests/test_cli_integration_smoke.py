@@ -187,6 +187,81 @@ class CliIntegrationSmokeTests(unittest.TestCase):
             self.assertEqual(payload["run_metadata"]["top_k"], 7)
             self.assertEqual(payload["run_metadata"]["compare_settings_source"], "plan_json")
 
+    def test_apply_from_plan_json_invalid_compare_settings(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            src = tmp / "A_plan" / "song.wav"
+            dst = tmp / "B_plan" / "song.wav"
+            src.parent.mkdir(parents=True, exist_ok=True)
+            src.write_text("audio")
+            plan_path = tmp / "plan.json"
+            plan_payload = {
+                "dir_a": str(tmp / "A_plan"),
+                "dir_b": str(tmp / "B_plan"),
+                "schema_version": 1,
+                "compare_settings": {
+                    "fuzzy_threshold": "not-a-number",
+                },
+                "operations": [
+                    {
+                        "action": "add_to_b",
+                        "source_path": str(src),
+                        "source_relative_path": "song.wav",
+                        "source_extension": ".wav",
+                        "source_codec": None,
+                        "preferred_destination_path": str(dst),
+                        "destination_path": str(dst),
+                        "replace_target_path": None,
+                    }
+                ],
+                "counts": {
+                    "operations": 1,
+                    "add_to_b": 1,
+                    "replace_in_b_with_a": 0,
+                    "keep_both_versions": 0,
+                },
+            }
+            plan_path.write_text(json.dumps(plan_payload), encoding="utf-8")
+
+            out = _run_cli(
+                [
+                    "apply",
+                    str(tmp / "CLI_A"),
+                    str(tmp / "CLI_B"),
+                    "--from-plan-json",
+                    str(plan_path),
+                    "--dry-run",
+                    "--yes",
+                    "--json",
+                ],
+                cwd=repo_root,
+            )
+            payload = json.loads(out.stdout)
+            self.assertEqual(payload["run_metadata"]["compare_settings_source"], "plan_json_invalid")
+            self.assertIsNone(payload["run_metadata"]["fuzzy_threshold"])
+
+    def test_cli_validation_error_returns_exit_blocked(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        cmd = [
+            sys.executable,
+            "-m",
+            "trackloom.cli",
+            "compare",
+            "A",
+            "B",
+            "--top-k",
+            "-1",
+        ]
+        result = subprocess.run(
+            cmd,
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("Error:", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
