@@ -72,7 +72,9 @@ def cmd_apply(args: Namespace) -> int:
         compare_settings, compare_invalid = _normalize_compare_settings(
             plan_payload.get("compare_settings")
         )
-        compare_settings_source = "plan_json_invalid" if compare_invalid else "plan_json"
+        compare_settings_source = (
+            "plan_json_invalid" if compare_invalid else "plan_json"
+        )
         effective_dir_a = str(plan_payload.get("dir_a") or args.dir_a)
         effective_dir_b = str(plan_payload.get("dir_b") or args.dir_b)
         validate_directory(Path(effective_dir_a), "plan dir_a")
@@ -192,7 +194,8 @@ def cmd_apply(args: Namespace) -> int:
         try:
             response = (
                 input(
-                    f"Apply {len(operations)} operation(s) to {effective_dir_b}? [y/N]: "
+                    f"Apply {len(operations)} operation(s) "
+                    f"to {effective_dir_b}? [y/N]: "
                 )
                 .strip()
                 .lower()
@@ -253,7 +256,9 @@ def cmd_apply(args: Namespace) -> int:
         "from_plan_json": str(args.from_plan_json) if args.from_plan_json else None,
         "run_metadata": {
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-            "fuzzy_threshold": _compare_setting("fuzzy_threshold", args.fuzzy_threshold),
+            "fuzzy_threshold": _compare_setting(
+                "fuzzy_threshold", args.fuzzy_threshold
+            ),
             "close_duration_seconds": _compare_setting(
                 "close_duration_seconds", args.close_duration_seconds
             ),

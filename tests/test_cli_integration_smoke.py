@@ -186,7 +186,10 @@ class CliIntegrationSmokeTests(unittest.TestCase):
             self.assertEqual(payload["dir_b"], str(tmp / "B_plan"))
             self.assertEqual(payload["run_metadata"]["fuzzy_threshold"], 0.11)
             self.assertEqual(payload["run_metadata"]["top_k"], 7)
-            self.assertEqual(payload["run_metadata"]["compare_settings_source"], "plan_json")
+            self.assertEqual(
+                payload["run_metadata"]["compare_settings_source"],
+                "plan_json",
+            )
 
     def test_apply_from_plan_json_invalid_compare_settings(self):
         repo_root = Path(__file__).resolve().parents[1]
@@ -240,7 +243,10 @@ class CliIntegrationSmokeTests(unittest.TestCase):
                 cwd=repo_root,
             )
             payload = json.loads(out.stdout)
-            self.assertEqual(payload["run_metadata"]["compare_settings_source"], "plan_json_invalid")
+            self.assertEqual(
+                payload["run_metadata"]["compare_settings_source"],
+                "plan_json_invalid",
+            )
             self.assertIsNone(payload["run_metadata"]["fuzzy_threshold"])
 
     def test_cli_validation_error_returns_exit_blocked(self):
