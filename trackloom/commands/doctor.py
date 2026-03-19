@@ -42,12 +42,10 @@ def cmd_doctor(args: Namespace) -> int:
     else:
         print("Doctor checks:")
         print(
-            f"- Python >=3.8: {'OK' if py_ok else 'FAIL'} "
-            f"({payload['python_version']})"
+            f"- Python >=3.8: {'OK' if py_ok else 'FAIL'} ({payload['python_version']})"
         )
         print(
-            f"- mutagen installed: {'OK' if mutagen_ok else 'FAIL'} "
-            f"({mutagen_detail})"
+            f"- mutagen installed: {'OK' if mutagen_ok else 'FAIL'} ({mutagen_detail})"
         )
         print(
             f"- rapidfuzz installed: {'OK' if rapidfuzz_ok else 'FAIL'} "

@@ -30,6 +30,7 @@ def cmd_apply(args: Namespace) -> int:
     source_decisions_file = None
     compare_settings = None
     compare_settings_source = None
+
     def _normalize_compare_settings(raw: object) -> tuple[dict[str, float | int], bool]:
         if not isinstance(raw, dict):
             return {}, True
@@ -50,6 +51,7 @@ def cmd_apply(args: Namespace) -> int:
             except (TypeError, ValueError):
                 return {}, True
         return normalized, False
+
     if args.from_plan_json is not None:
         if not args.from_plan_json.exists():
             raise ValueError(
@@ -238,12 +240,14 @@ def cmd_apply(args: Namespace) -> int:
         dir_b=Path(effective_dir_b),
     )
     compare_settings = compare_settings if isinstance(compare_settings, dict) else {}
+
     def _compare_setting(name: str, fallback: float | int | None):
         if name in compare_settings:
             return compare_settings.get(name)
         if args.from_plan_json is not None:
             return None
         return fallback
+
     payload = {
         "dir_a": effective_dir_a,
         "dir_b": effective_dir_b,
