@@ -131,6 +131,7 @@ class CliIntegrationSmokeTests(unittest.TestCase):
             src = tmp / "A_plan" / "song.wav"
             dst = tmp / "B_plan" / "song.wav"
             src.parent.mkdir(parents=True, exist_ok=True)
+            dst.parent.mkdir(parents=True, exist_ok=True)
             src.write_text("audio")
             plan_path = tmp / "plan.json"
             plan_payload = {
@@ -194,6 +195,7 @@ class CliIntegrationSmokeTests(unittest.TestCase):
             src = tmp / "A_plan" / "song.wav"
             dst = tmp / "B_plan" / "song.wav"
             src.parent.mkdir(parents=True, exist_ok=True)
+            dst.parent.mkdir(parents=True, exist_ok=True)
             src.write_text("audio")
             plan_path = tmp / "plan.json"
             plan_payload = {
@@ -261,6 +263,61 @@ class CliIntegrationSmokeTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 2)
         self.assertIn("Error:", result.stderr)
+
+    def test_doctor_json_outputs_expected_keys(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        cmd = [sys.executable, "-m", "trackloom.cli", "doctor", "--json"]
+        result = subprocess.run(
+            cmd,
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+        )
+        self.assertIn(result.returncode, (0, 2))
+        payload = json.loads(result.stdout)
+        self.assertIn("python_version", payload)
+        self.assertIn("python_ok", payload)
+        self.assertIn("mutagen_ok", payload)
+        self.assertIn("rapidfuzz_ok", payload)
+        self.assertIn("ffmpeg_ok", payload)
+        self.assertIn("ffmpeg_path", payload)
+
+    def test_help_advanced_shows_hidden_options(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        cmd = [sys.executable, "-m", "trackloom.cli", "help-advanced", "compare"]
+        result = subprocess.run(
+            cmd,
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        self.assertIn("--fuzzy-threshold", result.stdout)
+        self.assertIn("--min-song-sim", result.stdout)
+
+    def test_compare_requires_existing_directories(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            missing = tmp / "missing"
+            existing = tmp / "existing"
+            existing.mkdir()
+            cmd = [
+                sys.executable,
+                "-m",
+                "trackloom.cli",
+                "compare",
+                str(missing),
+                str(existing),
+            ]
+            result = subprocess.run(
+                cmd,
+                cwd=repo_root,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("dir_a does not exist", result.stderr)
 
 
 if __name__ == "__main__":

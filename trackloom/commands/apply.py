@@ -63,7 +63,11 @@ def cmd_apply(args: Namespace) -> int:
             plan_payload = load_plan_json(args.from_plan_json)
         except ValueError as exc:
             raise ValueError(f"Invalid plan JSON: {exc}") from exc
-        operations = plan_payload["operations"]
+        if not isinstance(plan_payload, dict):
+            raise ValueError("Invalid plan JSON: expected object at top level.")
+        operations = plan_payload.get("operations")
+        if not isinstance(operations, list):
+            raise ValueError("Invalid plan JSON: missing or invalid 'operations' list.")
         source_decisions_file = plan_payload.get("source_decisions_file")
         compare_settings, compare_invalid = _normalize_compare_settings(
             plan_payload.get("compare_settings")
