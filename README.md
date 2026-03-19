@@ -101,4 +101,4 @@ python3 -m pytest -q
 This project is licensed under the GNU General Public License v3.0 or later
 (`GPL-3.0-or-later`). See `LICENSE`.
 
-Built by Dan Getz, Jr. with agent assistance.
+Built by Dan Getz, Jr.
