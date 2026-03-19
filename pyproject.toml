@@ -5,12 +5,28 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "trackloom"
 version = "0.1.0"
-description = "CLI to compare audio files across two directories"
+description = "Safe CLI for comparing and merging music libraries"
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "GPL-3.0-or-later" }
+authors = [
+  { name = "Dan Getz, Jr." },
+]
+keywords = ["audio", "cli", "library", "music", "mp3", "flac"]
 classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: End Users/Desktop",
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Multimedia :: Sound/Audio",
+  "Topic :: Utilities",
 ]
 dependencies = [
   "mutagen>=1.47.0",
@@ -26,6 +42,12 @@ dev = [
 
 [project.scripts]
 trackloom = "trackloom.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/quizwedge/trackloom"
+Repository = "https://github.com/quizwedge/trackloom"
+Issues = "https://github.com/quizwedge/trackloom/issues"
+Changelog = "https://github.com/quizwedge/trackloom/releases"
 
 [tool.setuptools]
 packages = ["trackloom", "trackloom.commands"]

@@ -7,9 +7,15 @@ Use this checklist for versioned releases.
 1. Verify clean working tree.
 2. Run tests:
    - `python3 -m pytest -q`
-3. (Optional) Regenerate demo fixtures:
+3. Build and validate distributions:
+   - `python3 -m pip install --upgrade build twine setuptools wheel`
+   - `python3 -m build`
+   - `python3 -m twine check dist/*`
+   - `python3 -m pip install --force-reinstall dist/*.whl`
+   - `trackloom help`
+4. (Optional) Regenerate demo fixtures:
    - `python3 scripts/make_demo_data.py --force`
-4. Review docs for changed flags/behavior:
+5. Review docs for changed flags/behavior:
    - `README.md`
    - `AGENTS.md`
    - relevant ADRs in `adr/`
@@ -21,14 +27,11 @@ Use this checklist for versioned releases.
 3. Create a git tag:
    - `git tag vX.Y.Z`
 
-## Build and publish (optional)
+## Publish
 
-1. Build distributions:
-   - `python3 -m pip install --upgrade build twine`
-   - `python3 -m build`
-2. Verify package metadata:
-   - `python3 -m twine check dist/*`
-3. Upload to PyPI:
+1. Optional TestPyPI dry run:
+   - `python3 -m twine upload --repository testpypi dist/*`
+2. Upload to PyPI:
    - `python3 -m twine upload dist/*`
 
 ## Post-release

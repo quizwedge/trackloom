@@ -58,7 +58,7 @@ trackloom compare /path/to/library_a /path/to/library_b --json
 - Preserve safety guarantees (`no overwrite`, `no delete`) unless explicitly changed.
 - Keep licensing headers in Python files:
   - `SPDX-License-Identifier: GPL-3.0-or-later`
-  - `Copyright (C) 2026 Dan Getz, Jr.`
+  - `Built by Dan Getz, Jr.`
 
 ## Reporting issues
 

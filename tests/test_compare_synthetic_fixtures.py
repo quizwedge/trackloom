@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2026 Dan Getz, Jr.
+# Built by Dan Getz, Jr.
 import unittest
 from pathlib import Path
 from typing import List, Optional
