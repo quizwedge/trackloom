@@ -26,6 +26,12 @@ Human-readable CLI text is not part of this contract.
   - `apply`
   - `doctor`
 
+Currently excluded:
+
+- `parse --json`
+  - it is machine-readable, but it is not yet treated as a hard compatibility
+    contract and may evolve as parsing detail improves
+
 ## Compatibility policy
 
 - Existing required keys and meanings are backward-compatible.
@@ -122,3 +128,5 @@ The test suite enforces this contract using:
 - fixture-backed compatibility tests for persisted artifacts
 - end-to-end scenario tests for workflow handoff
 - focused mode and I/O contract tests
+- CI review checks that treat changes under `tests/fixtures/contracts/` as
+  contract changes requiring matching docs, ADR, and contract-test updates

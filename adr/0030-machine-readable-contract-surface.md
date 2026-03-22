@@ -28,6 +28,12 @@ Treat the following as stable machine-readable contracts:
 - top-level machine-readable `--json` payloads for `compare`, `plan`, `review`,
   `apply`, and `doctor`
 
+Explicitly excluded for now:
+
+- `parse --json`
+  - it is machine-readable, but its item-level parsing detail is still allowed to
+    evolve without being treated as a hard compatibility contract
+
 Compatibility rules:
 
 - existing required fields and field meanings must remain backward-compatible
@@ -45,6 +51,8 @@ Required testing posture:
 - fixture-backed compatibility tests for persisted artifacts
 - scenario-driven workflow tests for multi-command contract handoff
 - explicit tests for Plex-mode `mode_skipped_*` machine-readable fields
+- fixture changes under `tests/fixtures/contracts/` must be accompanied by
+  matching docs, ADR, and contract-test updates
 
 ## Consequences
 

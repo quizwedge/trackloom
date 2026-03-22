@@ -8,6 +8,51 @@ on:
     branches: [main]
 
 jobs:
+  contract-fixtures:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check Contract Fixture Changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          else
+            base_sha="${{ github.event.before }}"
+          fi
+
+          if [[ -z "${base_sha}" || "${base_sha}" == "0000000000000000000000000000000000000000" ]]; then
+            echo "No comparable base SHA; skipping contract fixture diff check."
+            exit 0
+          fi
+
+          changed_files="$(git diff --name-only "${base_sha}" "${GITHUB_SHA}")"
+          echo "${changed_files}"
+
+          if ! grep -q '^tests/fixtures/contracts/' <<< "${changed_files}"; then
+            echo "No contract fixture changes detected."
+            exit 0
+          fi
+
+          echo "Contract fixture changes detected; verifying companion updates."
+
+          if ! grep -Eq '^(docs/CONTRACTS\.md|adr/0030-machine-readable-contract-surface\.md|CONTRIBUTING\.md)$' <<< "${changed_files}"; then
+            echo "Contract fixture changes require matching updates to docs/CONTRACTS.md, adr/0030-machine-readable-contract-surface.md, or CONTRIBUTING.md."
+            exit 1
+          fi
+
+          if ! grep -Eq '^tests/test_contract_' <<< "${changed_files}"; then
+            echo "Contract fixture changes require matching updates to contract tests."
+            exit 1
+          fi
+
   pytest:
     runs-on: ubuntu-latest
     strategy:
@@ -18,6 +63,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v6

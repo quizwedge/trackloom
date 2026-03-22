@@ -55,6 +55,8 @@ trackloom compare /path/to/library_a /path/to/library_b --json
 - Keep PRs focused and small when possible.
 - Include tests for behavior changes.
 - Update `README.md` if flags, outputs, or workflow behavior changes.
+- Changes under `tests/fixtures/contracts/` are treated as contract changes and
+  must be reviewed alongside matching docs, ADR, and contract-test updates.
 - Preserve safety guarantees (`no overwrite`, `no delete`) unless explicitly changed.
 - Keep licensing headers in Python files:
   - `SPDX-License-Identifier: GPL-3.0-or-later`
