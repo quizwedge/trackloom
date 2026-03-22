@@ -19,8 +19,11 @@ class DecisionIoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "decisions.json"
             write_decisions(path, {"fuzzy:1": "replace_in_b_with_a"})
+            raw = path.read_text(encoding="utf-8")
             loaded = load_decisions(path)
         self.assertEqual(loaded["fuzzy:1"], "replace_in_b_with_a")
+        self.assertTrue(raw.endswith("\n"))
+        self.assertIn('"decisions"', raw)
 
     def test_load_plain_object(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -28,6 +31,20 @@ class DecisionIoTests(unittest.TestCase):
             path.write_text(json.dumps({"exact:2": "keep_b"}), encoding="utf-8")
             loaded = load_decisions(path)
         self.assertEqual(loaded["exact:2"], "keep_b")
+
+    def test_load_decisions_rejects_non_object(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "decisions.json"
+            path.write_text(json.dumps(["bad"]), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                load_decisions(path)
+
+    def test_load_decisions_stringifies_keys_and_values(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "decisions.json"
+            path.write_text(json.dumps({"decisions": {1: 2}}), encoding="utf-8")
+            loaded = load_decisions(path)
+        self.assertEqual(loaded, {"1": "2"})
 
 
 if __name__ == "__main__":

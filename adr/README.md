@@ -30,3 +30,4 @@
 - [0027: Default Cleanup Mode Moves Replaced Files to Quarantine](0027-default-quarantine-replace.md)
 - [0028: Use RapidFuzz for Text Similarity Scoring](0028-rapidfuzz-similarity.md)
 - [0029: Version Hints Favor High Recall](0029-version-hints-high-recall.md)
+- [0030: Stable Machine-Readable Contract Surface](0030-machine-readable-contract-surface.md)

@@ -24,6 +24,10 @@ class NormalizeSongFromStemTests(unittest.TestCase):
     def test_leaves_plain_titles_unchanged(self) -> None:
         self.assertEqual(parser.normalize_song_from_stem("Song Name"), "Song Name")
 
+    def test_returns_none_for_empty_or_missing_stem(self) -> None:
+        self.assertIsNone(parser.normalize_song_from_stem(""))
+        self.assertIsNone(parser.normalize_song_from_stem(None))
+
 
 class NormalizeForMatchTests(unittest.TestCase):
     def test_replaces_hyphens_and_underscores_with_spaces(self) -> None:
@@ -128,6 +132,15 @@ class ParseTagFieldsTests(unittest.TestCase):
             duration = parser.parse_duration_seconds(Path("/tmp/test.mp3"))
         self.assertEqual(duration, 245.7)
 
+    def test_duration_parsing_handles_missing_or_invalid_length(self) -> None:
+        no_info_audio = type("FakeAudio", (), {"tags": {}, "info": None})()
+        bad_info_audio = type("FakeAudio", (), {"tags": {}, "info": type("FakeInfo", (), {"length": "bad"})()})()
+
+        with patch.object(parser, "MutagenFile", return_value=no_info_audio):
+            self.assertIsNone(parser.parse_duration_seconds(Path("/tmp/test.mp3")))
+        with patch.object(parser, "MutagenFile", return_value=bad_info_audio):
+            self.assertIsNone(parser.parse_duration_seconds(Path("/tmp/test.mp3")))
+
     def test_parses_audio_quality_fields(self) -> None:
         fake_info = type(
             "FakeInfo",
@@ -149,6 +162,39 @@ class ParseTagFieldsTests(unittest.TestCase):
         self.assertEqual(quality["channels"], 2)
         self.assertEqual(quality["codec"], "FLAC")
 
+    def test_audio_quality_handles_missing_info_and_invalid_numbers(self) -> None:
+        no_info_audio = type("FakeAudio", (), {"tags": {}, "info": None})()
+        bad_info = type(
+            "FakeInfo",
+            (),
+            {
+                "bitrate": "bad",
+                "sample_rate": "bad",
+                "bits_per_sample": "bad",
+                "channels": "bad",
+                "codec": None,
+                "codec_description": "AAC",
+            },
+        )()
+        bad_audio = type("FakeAudio", (), {"tags": {}, "info": bad_info})()
+
+        with patch.object(parser, "MutagenFile", return_value=no_info_audio):
+            quality = parser.parse_audio_quality(Path("/tmp/test.flac"))
+        self.assertEqual(
+            quality,
+            {
+                "bitrate_kbps": None,
+                "sample_rate_hz": None,
+                "bit_depth": None,
+                "channels": None,
+                "codec": None,
+            },
+        )
+        with patch.object(parser, "MutagenFile", return_value=bad_audio):
+            quality = parser.parse_audio_quality(Path("/tmp/test.flac"))
+        self.assertEqual(quality["codec"], "AAC")
+        self.assertIsNone(quality["bitrate_kbps"])
+
 
 class VersionClassifierTests(unittest.TestCase):
     def test_classifies_common_version_hints(self) -> None:
@@ -167,6 +213,21 @@ class VersionClassifierTests(unittest.TestCase):
         )
         self.assertIn("remaster", hints)
         self.assertIn("remaster_year_2011", hints)
+
+    def test_classify_version_hints_handles_empty_and_deduplicates(self) -> None:
+        self.assertEqual(parser.classify_version_hints(None, None), [])
+        hints = parser.classify_version_hints(
+            song_from_path="Live Live Clean Explicit Stereo Mono Acoustic Instrumental Karaoke",
+            song_from_tag="Live",
+        )
+        self.assertEqual(hints.count("live"), 1)
+        self.assertIn("acoustic", hints)
+        self.assertIn("instrumental", hints)
+        self.assertIn("karaoke", hints)
+        self.assertIn("mono", hints)
+        self.assertIn("stereo", hints)
+        self.assertIn("clean", hints)
+        self.assertIn("explicit", hints)
 
 
 class CollectAudioMetadataTests(unittest.TestCase):
@@ -203,6 +264,14 @@ class CollectAudioMetadataTests(unittest.TestCase):
     def test_collect_raises_for_missing_directory(self) -> None:
         with self.assertRaises(FileNotFoundError):
             parser.collect_audio_metadata(Path("/definitely/missing/path"))
+
+    def test_collect_raises_for_non_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            file_path = Path(tmp) / "song.mp3"
+            file_path.write_text("x")
+
+            with self.assertRaises(NotADirectoryError):
+                parser.collect_audio_metadata(file_path)
 
     def test_collect_calls_progress_callback(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -243,6 +312,17 @@ class CollectAudioMetadataTests(unittest.TestCase):
             self.assertEqual(item.path_fields.song, "The_Best-Song")
             self.assertEqual(item.normalized_path_fields.song, "the best song")
             self.assertEqual(item.version_hints, [])
+
+    def test_is_audio_file_respects_extension_filter(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audio = root / "song.mp3"
+            art = root / "cover.jpg"
+            audio.touch()
+            art.touch()
+
+            self.assertTrue(parser.is_audio_file(audio, extensions={".mp3"}))
+            self.assertFalse(parser.is_audio_file(art, extensions={".mp3"}))
 
 
 if __name__ == "__main__":

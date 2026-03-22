@@ -15,8 +15,10 @@ class ReportIoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "reports" / "report.json"
             write_report_json(path, payload)
-            loaded = json.loads(path.read_text(encoding="utf-8"))
+            raw = path.read_text(encoding="utf-8")
+            loaded = json.loads(raw)
         self.assertEqual(loaded["foo"], "bar")
+        self.assertTrue(raw.endswith("\n"))
 
     def test_write_report_csv(self):
         payload = {
@@ -54,6 +56,24 @@ class ReportIoTests(unittest.TestCase):
         self.assertEqual(rows[0]["status"], "copied")
         self.assertEqual(rows[1]["status"], "skipped")
         self.assertEqual(rows[1]["reason"], "destination_exists")
+
+    def test_write_report_csv_handles_missing_optional_fields(self):
+        payload = {
+            "result": {
+                "executed": [{"operation": {"action": "add_to_b"}}],
+                "skipped": [{"operation": {"action": "keep_both_versions"}}],
+            }
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "reports" / "report.csv"
+            write_report_csv(path, payload)
+            with path.open("r", encoding="utf-8", newline="") as fh:
+                rows = list(csv.DictReader(fh))
+
+        self.assertEqual(rows[0]["status"], "")
+        self.assertEqual(rows[0]["source_path"], "")
+        self.assertEqual(rows[1]["status"], "skipped")
+        self.assertEqual(rows[1]["reason"], "")
 
 
 if __name__ == "__main__":

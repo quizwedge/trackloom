@@ -1,9 +1,18 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Built by Dan Getz, Jr.
 import unittest
+from argparse import Namespace
 from pathlib import Path
 
-from trackloom.compare import assess_duplicate_pair, canonical_key, compare_collections
+from trackloom.compare import (
+    _block_char,
+    _duration_score,
+    assess_duplicate_pair,
+    canonical_key,
+    compare_collections,
+    recommend_action_for_pair,
+)
+from trackloom.config import CompareConfig
 from trackloom.parser import ParsedAudioFile, ParsedFields
 
 
@@ -42,6 +51,54 @@ def make_file(
 
 
 class CompareCollectionsTests(unittest.TestCase):
+    def test_compare_config_validate_rejects_invalid_values(self):
+        cases = [
+            CompareConfig(-0.1, 1.0, 5.0, 0.82, 0.65, 20),
+            CompareConfig(0.75, -1.0, 5.0, 0.82, 0.65, 20),
+            CompareConfig(0.75, 3.0, 2.0, 0.82, 0.65, 20),
+            CompareConfig(0.75, 1.0, 5.0, 1.2, 0.65, 20),
+            CompareConfig(0.75, 1.0, 5.0, 0.82, -0.1, 20),
+            CompareConfig(0.75, 1.0, 5.0, 0.82, 0.65, -1),
+        ]
+        for config in cases:
+            with self.subTest(config=config):
+                with self.assertRaises(ValueError):
+                    config.validate()
+
+    def test_compare_config_from_args_casts_values(self):
+        args = Namespace(
+            fuzzy_threshold="0.7",
+            close_duration_seconds="1.5",
+            duration_conflict_seconds="6",
+            min_song_sim="0.8",
+            min_artist_sim="0.6",
+            top_k="4",
+        )
+
+        config = CompareConfig.from_args(args)
+
+        self.assertEqual(config.top_k, 4)
+        self.assertEqual(config.as_compare_kwargs()["fuzzy_threshold"], 0.7)
+
+    def test_block_char_uses_first_alpha_or_digit(self):
+        self.assertEqual(_block_char("the 1975"), "1")
+        self.assertEqual(_block_char("...Believer"), "B")
+        self.assertEqual(_block_char(None), "")
+
+    def test_duration_score_handles_missing_zero_and_clamped_thresholds(self):
+        self.assertEqual(_duration_score(None, 200.0, 1.0, 5.0), (0.5, None))
+        self.assertEqual(_duration_score(10.0, 10.0, 0.0, 5.0), (1.0, 0.0))
+        self.assertEqual(_duration_score(10.0, 11.0, 0.0, 5.0), (0.0, 1.0))
+        score, diff = _duration_score(10.0, 12.0, 3.0, 2.0)
+        self.assertGreater(score, 0.0)
+        self.assertEqual(diff, 2.0)
+
+    def test_recommend_action_defaults_to_manual_review_for_unknown_policy(self):
+        self.assertEqual(
+            recommend_action_for_pair({"classification": "mystery", "preferred_side": "a"}),
+            "manual_review",
+        )
+
     def test_canonical_key_prefers_normalized_tag_fields(self):
         item = ParsedAudioFile(
             root="/music",

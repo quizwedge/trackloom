@@ -73,4 +73,6 @@ Trackloom is a local-first CLI for safe music-library merge planning.
 - Compare-tuning validation is centralized in `CompareConfig`.
 - Command modules should remain thin orchestration layers; core behavior belongs in
   parser/compare/planner/review/apply modules.
+- Stable machine-readable artifacts and `--json` payloads are documented in
+  `docs/CONTRACTS.md` and governed by ADR 0030.
 - Behavior changes affecting safety or policy should be captured in ADRs.

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "dir_a": "/music/A",
+  "dir_b": "/music/B",
+  "counts": {
+    "operations": 1,
+    "add_to_b": 1,
+    "replace_in_b_with_a": 0,
+    "keep_both_versions": 0
+  },
+  "operations": [
+    {
+      "action": "add_to_b",
+      "source_path": "/music/A/Artist/Album/song.mp3",
+      "source_relative_path": "Artist/Album/song.mp3",
+      "source_extension": ".mp3",
+      "source_codec": null,
+      "preferred_destination_path": "/music/B/Artist/Album/song.mp3",
+      "destination_path": "/music/B/Artist/Album/song.mp3",
+      "replace_target_path": null
+    }
+  ]
+}

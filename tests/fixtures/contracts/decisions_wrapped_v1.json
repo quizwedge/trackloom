@@ -1,0 +1,6 @@
+{
+  "decisions": {
+    "exact:abc123": "replace_in_b_with_a",
+    "fuzzy:def456": "keep_both_versions"
+  }
+}

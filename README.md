@@ -78,6 +78,7 @@ and dry-run output.
 ## Docs
 
 - CLI workflow and command details: `docs/CLI.md`
+- Machine-readable contract surface: `docs/CONTRACTS.md`
 - Architecture overview: `docs/ARCHITECTURE.md`
 - Troubleshooting: `docs/TROUBLESHOOTING.md`
 - ADR index: `adr/README.md`
