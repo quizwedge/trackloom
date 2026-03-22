@@ -134,7 +134,14 @@ class ParseTagFieldsTests(unittest.TestCase):
 
     def test_duration_parsing_handles_missing_or_invalid_length(self) -> None:
         no_info_audio = type("FakeAudio", (), {"tags": {}, "info": None})()
-        bad_info_audio = type("FakeAudio", (), {"tags": {}, "info": type("FakeInfo", (), {"length": "bad"})()})()
+        bad_info_audio = type(
+            "FakeAudio",
+            (),
+            {
+                "tags": {},
+                "info": type("FakeInfo", (), {"length": "bad"})(),
+            },
+        )()
 
         with patch.object(parser, "MutagenFile", return_value=no_info_audio):
             self.assertIsNone(parser.parse_duration_seconds(Path("/tmp/test.mp3")))
@@ -217,7 +224,9 @@ class VersionClassifierTests(unittest.TestCase):
     def test_classify_version_hints_handles_empty_and_deduplicates(self) -> None:
         self.assertEqual(parser.classify_version_hints(None, None), [])
         hints = parser.classify_version_hints(
-            song_from_path="Live Live Clean Explicit Stereo Mono Acoustic Instrumental Karaoke",
+            song_from_path=(
+                "Live Live Clean Explicit Stereo Mono Acoustic Instrumental Karaoke"
+            ),
             song_from_tag="Live",
         )
         self.assertEqual(hints.count("live"), 1)

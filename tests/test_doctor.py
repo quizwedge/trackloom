@@ -7,7 +7,12 @@ from argparse import Namespace
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
-from trackloom.commands.doctor import EXIT_BLOCKED, EXIT_SUCCESS, _check_import, cmd_doctor
+from trackloom.commands.doctor import (
+    EXIT_BLOCKED,
+    EXIT_SUCCESS,
+    _check_import,
+    cmd_doctor,
+)
 
 
 class DoctorTests(unittest.TestCase):
@@ -21,11 +26,15 @@ class DoctorTests(unittest.TestCase):
     def test_cmd_doctor_json_success_contract(self):
         args = Namespace(json=True)
 
-        with patch("trackloom.commands.doctor._check_import", side_effect=[(True, "ok"), (True, "ok")]), patch(
-            "trackloom.commands.doctor.shutil.which", return_value="/usr/bin/ffmpeg"
-        ), patch("trackloom.commands.doctor.sys.version_info", (3, 8, 2)), redirect_stdout(
-            io.StringIO()
-        ) as stdout:
+        with patch(
+            "trackloom.commands.doctor._check_import",
+            side_effect=[(True, "ok"), (True, "ok")],
+        ), patch(
+            "trackloom.commands.doctor.shutil.which",
+            return_value="/usr/bin/ffmpeg",
+        ), patch(
+            "trackloom.commands.doctor.sys.version_info", (3, 8, 2)
+        ), redirect_stdout(io.StringIO()) as stdout:
             result = cmd_doctor(args)
 
         self.assertEqual(result, EXIT_SUCCESS)
@@ -43,11 +52,9 @@ class DoctorTests(unittest.TestCase):
         with patch(
             "trackloom.commands.doctor._check_import",
             side_effect=[(False, "mutagen import failed: nope"), (True, "ok")],
-        ), patch(
-            "trackloom.commands.doctor.shutil.which", return_value=None
-        ), patch("trackloom.commands.doctor.sys.version_info", (3, 9, 1)), redirect_stdout(
-            io.StringIO()
-        ) as stdout:
+        ), patch("trackloom.commands.doctor.shutil.which", return_value=None), patch(
+            "trackloom.commands.doctor.sys.version_info", (3, 9, 1)
+        ), redirect_stdout(io.StringIO()) as stdout:
             result = cmd_doctor(args)
 
         self.assertEqual(result, EXIT_BLOCKED)
@@ -61,11 +68,15 @@ class DoctorTests(unittest.TestCase):
     def test_cmd_doctor_blocked_when_python_too_old_even_if_deps_exist(self):
         args = Namespace(json=True)
 
-        with patch("trackloom.commands.doctor._check_import", side_effect=[(True, "ok"), (True, "ok")]), patch(
-            "trackloom.commands.doctor.shutil.which", return_value="/usr/bin/ffmpeg"
-        ), patch("trackloom.commands.doctor.sys.version_info", (3, 7, 9)), redirect_stdout(
-            io.StringIO()
-        ) as stdout:
+        with patch(
+            "trackloom.commands.doctor._check_import",
+            side_effect=[(True, "ok"), (True, "ok")],
+        ), patch(
+            "trackloom.commands.doctor.shutil.which",
+            return_value="/usr/bin/ffmpeg",
+        ), patch(
+            "trackloom.commands.doctor.sys.version_info", (3, 7, 9)
+        ), redirect_stdout(io.StringIO()) as stdout:
             result = cmd_doctor(args)
 
         self.assertEqual(result, EXIT_BLOCKED)

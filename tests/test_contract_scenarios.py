@@ -152,7 +152,10 @@ class ContractScenarioTests(unittest.TestCase):
                 ["replace_in_b_with_a"],
             )
             self.assertEqual(plan_one["operations"], plan_two["operations"])
-            self.assertEqual(plan_one["review_action_counts"], plan_two["review_action_counts"])
+            self.assertEqual(
+                plan_one["review_action_counts"],
+                plan_two["review_action_counts"],
+            )
             self.assertEqual(plan_one["source_decisions_file"], str(decisions_path))
             self.assertEqual(plan_two["source_decisions_file"], str(decisions_path))
 
@@ -222,7 +225,9 @@ class ContractScenarioTests(unittest.TestCase):
                 self.assertIn("run_metadata", body)
                 self.assertIn("result", body)
                 self.assertIn("mode_skipped_operations", body)
-                self.assertEqual(body["run_metadata"]["compare_settings_source"], "plan_json")
+                self.assertEqual(
+                    body["run_metadata"]["compare_settings_source"], "plan_json"
+                )
                 self.assertEqual(body["result"]["requested_count"], 1)
             self.assertEqual(rows[0]["status"], "dry_run")
             self.assertEqual(rows[0]["action"], "add_to_b")

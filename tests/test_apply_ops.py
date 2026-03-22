@@ -26,7 +26,9 @@ class ApplyOpsTests(unittest.TestCase):
 
             self.assertTrue(dst.exists())
             self.assertEqual(dst.read_text(), "audio")
-            temp_files = [p for p in dst.parent.iterdir() if p.name.startswith(".trackloom_tmp_")]
+            temp_files = [
+                p for p in dst.parent.iterdir() if p.name.startswith(".trackloom_tmp_")
+            ]
             self.assertEqual(temp_files, [])
 
     def test_copy_with_atomic_no_overwrite_cleans_placeholder_on_replace_failure(self):
@@ -43,11 +45,12 @@ class ApplyOpsTests(unittest.TestCase):
                     raise OSError("replace failed")
                 return original_replace(path_obj, target)
 
-            with patch("trackloom.apply_ops.os.link", side_effect=OSError("no link")), patch(
-                "pathlib.Path.replace", new=flaky_replace
+            with patch(
+                "trackloom.apply_ops.os.link", side_effect=OSError("no link")
+            ), patch("pathlib.Path.replace", new=flaky_replace), self.assertRaises(
+                OSError
             ):
-                with self.assertRaises(OSError):
-                    _copy_with_atomic_no_overwrite(src, dst)
+                _copy_with_atomic_no_overwrite(src, dst)
 
             self.assertFalse(dst.exists())
 
@@ -71,11 +74,13 @@ class ApplyOpsTests(unittest.TestCase):
                     raise OSError("cleanup failed")
                 return original_unlink(path_obj, *args, **kwargs)
 
-            with patch("trackloom.apply_ops.shutil.copy2", side_effect=OSError("copy failed")), patch(
-                "pathlib.Path.exists", new=fake_exists
-            ), patch("pathlib.Path.unlink", new=fake_unlink):
-                with self.assertRaises(OSError):
-                    _copy_with_atomic_no_overwrite(src, dst)
+            with patch(
+                "trackloom.apply_ops.shutil.copy2",
+                side_effect=OSError("copy failed"),
+            ), patch("pathlib.Path.exists", new=fake_exists), patch(
+                "pathlib.Path.unlink", new=fake_unlink
+            ), self.assertRaises(OSError):
+                _copy_with_atomic_no_overwrite(src, dst)
 
             self.assertFalse(dst.exists())
 
@@ -610,7 +615,9 @@ class ApplyOpsTests(unittest.TestCase):
                 "source_path": str(src),
                 "source_relative_path": "Artist/Album/song.wav",
                 "preferred_destination_path": str(old_b),
-                "destination_path": str(dir_b / "Artist" / "Album" / "song (from A).wav"),
+                "destination_path": str(
+                    dir_b / "Artist" / "Album" / "song (from A).wav"
+                ),
                 "replace_target_path": str(old_b),
             }
 
@@ -647,7 +654,9 @@ class ApplyOpsTests(unittest.TestCase):
                 "source_path": str(src),
                 "source_relative_path": "Artist/Album/song.wav",
                 "preferred_destination_path": str(old_b),
-                "destination_path": str(dir_b / "Artist" / "Album" / "song (from A).wav"),
+                "destination_path": str(
+                    dir_b / "Artist" / "Album" / "song (from A).wav"
+                ),
                 "replace_target_path": str(old_b),
             }
             qdst = quarantine / "Artist" / "Album" / "song.mp3"

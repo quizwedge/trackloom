@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Built by Dan Getz, Jr.
 import csv
-import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,7 +8,6 @@ from pathlib import Path
 from trackloom.decision_io import load_decisions
 from trackloom.plan_io import load_plan_json
 from trackloom.report_io import write_report_csv
-
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "contracts"
 

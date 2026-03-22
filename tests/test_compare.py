@@ -61,9 +61,8 @@ class CompareCollectionsTests(unittest.TestCase):
             CompareConfig(0.75, 1.0, 5.0, 0.82, 0.65, -1),
         ]
         for config in cases:
-            with self.subTest(config=config):
-                with self.assertRaises(ValueError):
-                    config.validate()
+            with self.subTest(config=config), self.assertRaises(ValueError):
+                config.validate()
 
     def test_compare_config_from_args_casts_values(self):
         args = Namespace(
@@ -95,7 +94,9 @@ class CompareCollectionsTests(unittest.TestCase):
 
     def test_recommend_action_defaults_to_manual_review_for_unknown_policy(self):
         self.assertEqual(
-            recommend_action_for_pair({"classification": "mystery", "preferred_side": "a"}),
+            recommend_action_for_pair(
+                {"classification": "mystery", "preferred_side": "a"}
+            ),
             "manual_review",
         )
 

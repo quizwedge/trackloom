@@ -142,7 +142,8 @@ class ApplyCommandTests(unittest.TestCase):
         with patch("trackloom.commands.apply.validate_directory"), patch(
             "trackloom.commands.apply.collect_audio_pair", return_value=([], [])
         ), patch(
-            "trackloom.commands.apply.compare_payload", return_value={"action_counts": {}}
+            "trackloom.commands.apply.compare_payload",
+            return_value={"action_counts": {}},
         ), patch(
             "trackloom.commands.apply.build_copy_plan",
             return_value={
@@ -251,7 +252,9 @@ class ApplyCommandTests(unittest.TestCase):
                 report_csv=root / "report.csv",
             )
 
-            with patch("trackloom.commands.apply.write_report_json") as write_json, patch(
+            with patch(
+                "trackloom.commands.apply.write_report_json"
+            ) as write_json, patch(
                 "trackloom.commands.apply.write_report_csv"
             ) as write_csv, redirect_stdout(io.StringIO()) as stdout:
                 result = cmd_apply(args)
@@ -272,9 +275,11 @@ class ApplyCommandTests(unittest.TestCase):
         with patch("trackloom.commands.apply.validate_directory"), patch(
             "trackloom.commands.apply.collect_audio_pair", return_value=([], [])
         ), patch(
-            "trackloom.commands.apply.compare_payload", return_value={"action_counts": {}}
+            "trackloom.commands.apply.compare_payload",
+            return_value={"action_counts": {}},
         ), patch(
-            "trackloom.commands.apply.build_copy_plan", return_value={"operations": []}
+            "trackloom.commands.apply.build_copy_plan",
+            return_value={"operations": []},
         ), redirect_stdout(io.StringIO()) as stdout:
             result = cmd_apply(args)
 
@@ -434,7 +439,8 @@ class ApplyCommandTests(unittest.TestCase):
         with patch("trackloom.commands.apply.validate_directory"), patch(
             "trackloom.commands.apply.collect_audio_pair", return_value=([], [])
         ), patch(
-            "trackloom.commands.apply.compare_payload", return_value={"action_counts": {}}
+            "trackloom.commands.apply.compare_payload",
+            return_value={"action_counts": {}},
         ), patch(
             "trackloom.commands.apply.build_copy_plan",
             return_value={
@@ -501,7 +507,10 @@ class ApplyCommandTests(unittest.TestCase):
                 result = cmd_apply(args)
 
             self.assertEqual(result, 0)
-            self.assertIn("Apply result: requested=1 executed=1 skipped=0", stdout.getvalue())
+            self.assertIn(
+                "Apply result: requested=1 executed=1 skipped=0",
+                stdout.getvalue(),
+            )
             input_mock.assert_not_called()
             execute_operations.assert_called_once()
 
@@ -600,7 +609,9 @@ class ApplyCommandTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            args = _base_apply_args(dir_a, dir_b, plan_path, mode="plex", json=True, yes=True)
+            args = _base_apply_args(
+                dir_a, dir_b, plan_path, mode="plex", json=True, yes=True
+            )
 
             with patch(
                 "trackloom.commands.apply.filter_operations_for_mode",
@@ -644,7 +655,10 @@ class ReviewCommandTests(unittest.TestCase):
             dir_b.mkdir()
             args = _base_review_args(dir_a, dir_b, json=True)
 
-            with patch("trackloom.commands.review.collect_audio_pair", return_value=([], [])), patch(
+            with patch(
+                "trackloom.commands.review.collect_audio_pair",
+                return_value=([], []),
+            ), patch(
                 "trackloom.commands.review.compare_payload", return_value={}
             ), patch(
                 "trackloom.commands.review.extract_manual_review_candidates",
@@ -677,7 +691,10 @@ class ReviewCommandTests(unittest.TestCase):
                 export_manual_review_json=export_path,
             )
 
-            with patch("trackloom.commands.review.collect_audio_pair", return_value=([], [])), patch(
+            with patch(
+                "trackloom.commands.review.collect_audio_pair",
+                return_value=([], []),
+            ), patch(
                 "trackloom.commands.review.compare_payload",
                 return_value={"fuzzy_dropped_count": 0},
             ), patch(
@@ -722,7 +739,10 @@ class ReviewCommandTests(unittest.TestCase):
             args = _base_review_args(dir_a, dir_b, decisions_file=decisions_file)
             commands = ["4 a", "1 x", "wat", "1 a", "n", "p", "q"]
 
-            with patch("trackloom.commands.review.collect_audio_pair", return_value=([], [])), patch(
+            with patch(
+                "trackloom.commands.review.collect_audio_pair",
+                return_value=([], []),
+            ), patch(
                 "trackloom.commands.review.compare_payload",
                 return_value={"fuzzy_dropped_count": 1},
             ), patch(
@@ -775,7 +795,10 @@ class ReviewCommandTests(unittest.TestCase):
                 json=True,
             )
 
-            with patch("trackloom.commands.review.collect_audio_pair", return_value=([], [])), patch(
+            with patch(
+                "trackloom.commands.review.collect_audio_pair",
+                return_value=([], []),
+            ), patch(
                 "trackloom.commands.review.compare_payload",
                 return_value={"fuzzy_dropped_count": 0},
             ), patch(
@@ -846,7 +869,10 @@ class ReviewCommandTests(unittest.TestCase):
                 json=False,
             )
 
-            with patch("trackloom.commands.review.collect_audio_pair", return_value=([], [])), patch(
+            with patch(
+                "trackloom.commands.review.collect_audio_pair",
+                return_value=([], []),
+            ), patch(
                 "trackloom.commands.review.compare_payload",
                 return_value={"fuzzy_dropped_count": 0},
             ), patch(
@@ -922,9 +948,9 @@ class CommandOutputTests(unittest.TestCase):
 
         with patch("trackloom.commands.compare.validate_directory"), patch(
             "trackloom.commands.compare.collect_audio_pair", return_value=([], [])
-        ), patch("trackloom.commands.compare.compare_payload", return_value=payload), redirect_stdout(
-            io.StringIO()
-        ) as stdout:
+        ), patch(
+            "trackloom.commands.compare.compare_payload", return_value=payload
+        ), redirect_stdout(io.StringIO()) as stdout:
             result = cmd_compare(args)
 
         self.assertEqual(result, 0)
@@ -964,10 +990,15 @@ class CommandOutputTests(unittest.TestCase):
 
         with patch("trackloom.commands.plan.validate_directory"), patch(
             "trackloom.commands.plan.collect_audio_pair", return_value=([], [])
-        ), patch("trackloom.commands.plan.compare_payload", return_value=compare_result), patch(
-            "trackloom.commands.plan.build_copy_plan", return_value=plan_payload
         ), patch(
-            "trackloom.commands.plan.apply_mode_to_plan_payload", return_value=plan_payload
+            "trackloom.commands.plan.compare_payload",
+            return_value=compare_result,
+        ), patch(
+            "trackloom.commands.plan.build_copy_plan",
+            return_value=plan_payload,
+        ), patch(
+            "trackloom.commands.plan.apply_mode_to_plan_payload",
+            return_value=plan_payload,
         ), redirect_stdout(io.StringIO()) as stdout:
             result = cmd_plan(args)
 
@@ -1007,10 +1038,15 @@ class CommandOutputTests(unittest.TestCase):
 
         with patch("trackloom.commands.plan.validate_directory"), patch(
             "trackloom.commands.plan.collect_audio_pair", return_value=([], [])
-        ), patch("trackloom.commands.plan.compare_payload", return_value=compare_result), patch(
-            "trackloom.commands.plan.build_copy_plan", return_value=plan_payload
         ), patch(
-            "trackloom.commands.plan.apply_mode_to_plan_payload", return_value=plan_payload
+            "trackloom.commands.plan.compare_payload",
+            return_value=compare_result,
+        ), patch(
+            "trackloom.commands.plan.build_copy_plan",
+            return_value=plan_payload,
+        ), patch(
+            "trackloom.commands.plan.apply_mode_to_plan_payload",
+            return_value=plan_payload,
         ), redirect_stdout(io.StringIO()) as stdout:
             result = cmd_plan(args)
 
@@ -1044,10 +1080,15 @@ class CommandOutputTests(unittest.TestCase):
 
         with patch("trackloom.commands.plan.validate_directory"), patch(
             "trackloom.commands.plan.collect_audio_pair", return_value=([], [])
-        ), patch("trackloom.commands.plan.compare_payload", return_value=compare_result), patch(
-            "trackloom.commands.plan.build_copy_plan", return_value=plan_payload
         ), patch(
-            "trackloom.commands.plan.apply_mode_to_plan_payload", return_value=plan_payload
+            "trackloom.commands.plan.compare_payload",
+            return_value=compare_result,
+        ), patch(
+            "trackloom.commands.plan.build_copy_plan",
+            return_value=plan_payload,
+        ), patch(
+            "trackloom.commands.plan.apply_mode_to_plan_payload",
+            return_value=plan_payload,
         ), redirect_stdout(io.StringIO()) as stdout:
             result = cmd_plan(args)
 
@@ -1076,7 +1117,10 @@ class CommandOutputTests(unittest.TestCase):
                 }
             ]
 
-            with patch("trackloom.commands.review.collect_audio_pair", return_value=([], [])), patch(
+            with patch(
+                "trackloom.commands.review.collect_audio_pair",
+                return_value=([], []),
+            ), patch(
                 "trackloom.commands.review.compare_payload",
                 return_value={"fuzzy_dropped_count": 0},
             ), patch(
@@ -1106,7 +1150,9 @@ class CommandOutputTests(unittest.TestCase):
                         "skip": 0,
                     },
                     "mode_skipped_count": 1,
-                    "mode_skipped_operations": [{"reason": "drm_or_protected_extension"}],
+                    "mode_skipped_operations": [
+                        {"reason": "drm_or_protected_extension"}
+                    ],
                 },
             ), patch(
                 "trackloom.commands.review.apply_mode_to_plan_payload",
@@ -1126,7 +1172,9 @@ class CommandOutputTests(unittest.TestCase):
                         "skip": 0,
                     },
                     "mode_skipped_count": 1,
-                    "mode_skipped_operations": [{"reason": "drm_or_protected_extension"}],
+                    "mode_skipped_operations": [
+                        {"reason": "drm_or_protected_extension"}
+                    ],
                 },
             ), patch("builtins.input", side_effect=["1 a", "done"]), redirect_stdout(
                 io.StringIO()
@@ -1155,7 +1203,10 @@ class CommandOutputTests(unittest.TestCase):
 
             with patch(
                 "trackloom.commands.parse.collect_audio_metadata",
-                side_effect=[[DummyItem("Artist/Album/A.mp3")], [DummyItem("Artist/Album/B.mp3")]],
+                side_effect=[
+                    [DummyItem("Artist/Album/A.mp3")],
+                    [DummyItem("Artist/Album/B.mp3")],
+                ],
             ), redirect_stdout(io.StringIO()) as stdout:
                 result = cmd_parse(args)
 
