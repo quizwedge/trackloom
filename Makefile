@@ -1,4 +1,4 @@
-.PHONY: all clean dev lint format test help
+.PHONY: all clean dev lock lint format test help
 
 all: lint format test
 
@@ -8,6 +8,9 @@ clean:
 
 dev:
 	python3 -m pip install -e .[dev]
+
+lock:
+	PIP_TOOLS_CACHE_DIR=.pip-tools-cache python3 -m piptools compile pyproject.toml -o requirements.txt --strip-extras
 
 lint:
 	python3 -m ruff check .
@@ -21,6 +24,7 @@ test:
 help:
 	@echo "Available targets:"
 	@echo "  make dev    - install dev dependencies"
+	@echo "  make lock   - regenerate pinned runtime requirements"
 	@echo "  make lint   - run Ruff checks"
 	@echo "  make format - apply Ruff formatting"
 	@echo "  make test   - run pytest"

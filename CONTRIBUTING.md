@@ -28,6 +28,7 @@ python3 -m ruff format .
 
 ```bash
 make dev
+make lock
 make lint
 make format
 make test
@@ -40,6 +41,17 @@ make help
 
 ```bash
 pre-commit install
+```
+
+## Dependency lockfile
+
+`requirements.txt` is the pinned runtime lockfile generated from
+`pyproject.toml`.
+
+Regenerate it with:
+
+```bash
+make lock
 ```
 
 ## Local CLI smoke checks

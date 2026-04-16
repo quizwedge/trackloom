@@ -97,6 +97,18 @@ python3 -m ruff format .
 python3 -m pytest -q
 ```
 
+## Dependency Lockfile
+
+`requirements.txt` is the pinned runtime lockfile generated from
+`pyproject.toml`. It exists for reproducible installs and dependency scanners
+such as Aikido.
+
+Regenerate it with:
+
+```bash
+make lock
+```
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0 or later
